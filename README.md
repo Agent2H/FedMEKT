@@ -1,5 +1,5 @@
 # MMFedEKT
-Implementation for Embedding Knowledge Transfer for Multimodal FL
+# Implementation for Embedding Knowledge Transfer for Multimodal FL
 
 ======
 
