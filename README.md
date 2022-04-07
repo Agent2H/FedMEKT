@@ -1,6 +1,6 @@
 # MMFedEKT
 Implementation for Embedding Knowledge Transfer for Multimodal FL
-CDKT Algorithm Implementation
+
 ======
 
 This repository implements all experiments for knowledge transfer in multimodal FL
