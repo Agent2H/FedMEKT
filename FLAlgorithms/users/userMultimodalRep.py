@@ -349,7 +349,7 @@ class userMultimodalRep(User):
                         elif Local_CDKT_metric == "Norm2":
                             loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * (norm2loss_A+norm2loss_A1) + beta*(norm2loss_B+norm2loss_B1)
                         elif Local_CDKT_metric == "JSD":
-                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * lossJSD_A + beta*lossJSD_B
+                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * (lossJSD_A+ lossJSD_A1) + beta*(lossJSD_B+lossJSD_B1)
 
                         loss.backward()
                         self.optimizer.step()

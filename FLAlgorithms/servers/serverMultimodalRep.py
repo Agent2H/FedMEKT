@@ -381,7 +381,7 @@ class MultimodalRep(Dem_Server):
                     elif Global_CDKT_metric == "Norm2":
                         loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * (norm2loss_A+ norm2loss_A1) + gamma * (norm2loss_B +norm2loss_B1)
                     elif Global_CDKT_metric == "JSD":
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * (lossJSD_A +lossJSD_A1) + gamma * (lossJSD_B +   lossJSD_B1)
+                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * (lossJSD_A +lossJSD_A1) + gamma * (lossJSD_B + lossJSD_B1)
 
                     loss.backward()
                     self.optimizer_glob_ae.step()
