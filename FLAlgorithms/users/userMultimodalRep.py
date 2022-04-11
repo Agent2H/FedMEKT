@@ -135,18 +135,21 @@ class userMultimodalRep(User):
                         self.freeze(self.model.decoder_B)
 
                         output, _ = self.model(seq_A, "A")
-                        repA_public = self.model.encode(seq_A_public,"A")
-                        gen_repA_public = gen_model.encode(seq_A_public,"A")
+                        repA_public, repA_public1 = self.model.encode(seq_A_public,"A")
+                        gen_repA_public, gen_repA_public1 = gen_model.encode(seq_A_public,"A")
                         lossKD= self.criterion_KL(repA_public, gen_repA_public)
+                        lossKD1 = self.criterion_KL(repA_public1, gen_repA_public1)
                         norm2loss = torch.dist(repA_public, gen_repA_public, p=2)
+                        norm2loss1 = torch.dist(repA_public1, gen_repA_public1, p=2)
                         lossJSD = self.criterion_JSD(repA_public,gen_repA_public)
+                        lossJSD1 = self.criterion_JSD(repA_public1, gen_repA_public1)
                         lossTrue = self.criterion_MSE(output, seq_A[:, inv_idx, :])
                         if Local_CDKT_metric == "KL":
-                            loss = lossTrue + alpha * lossKD
+                            loss = lossTrue + alpha * lossKD + alpha*lossKD1
                         elif Local_CDKT_metric == "Norm2":
-                            loss = lossTrue + alpha * norm2loss
+                            loss = lossTrue + alpha * norm2loss + alpha*norm2loss1
                         elif Local_CDKT_metric == "JSD":
-                            loss = lossTrue + alpha * lossJSD
+                            loss = lossTrue + alpha * lossJSD + alpha*lossJSD1
 
                         # sub_epoch_losses.append(loss.item())
                         loss.backward()
@@ -162,18 +165,21 @@ class userMultimodalRep(User):
                         self.freeze(self.model.decoder_A)
 
                         _, output = self.model(seq_B, "B")
-                        repB_public = self.model.encode(seq_B_public, "B")
-                        gen_repB_public = gen_model.encode(seq_B_public, "B")
+                        repB_public, repB_public1 = self.model.encode(seq_B_public, "B")
+                        gen_repB_public, gen_repB_public1 = gen_model.encode(seq_B_public, "B")
                         lossKD = self.criterion_KL(repB_public, gen_repB_public)
+                        lossKD1 = self.criterion_KL(repB_public1, gen_repB_public1)
                         norm2loss = torch.dist(repB_public, gen_repB_public, p=2)
+                        norm2loss1 = torch.dist(repB_public1, gen_repB_public1, p=2)
                         lossJSD = self.criterion_JSD(repB_public, gen_repB_public)
+                        lossJSD1 = self.criterion_JSD(repB_public1, gen_repB_public1)
                         lossTrue = self.criterion_MSE(output, seq_B[:, inv_idx, :])
                         if Local_CDKT_metric == "KL":
-                            loss = lossTrue + beta * lossKD
+                            loss = lossTrue + beta * lossKD + beta * lossKD1
                         elif Local_CDKT_metric == "Norm2":
-                            loss = lossTrue + beta * norm2loss
+                            loss = lossTrue + beta * norm2loss + beta * norm2loss1
                         elif Local_CDKT_metric == "JSD":
-                            loss = lossTrue + beta * lossJSD
+                            loss = lossTrue + beta * lossJSD + beta * lossJSD1
 
                         # sub_epoch_losses.append(loss.item())
                         loss.backward()
@@ -188,21 +194,25 @@ class userMultimodalRep(User):
                         # print("doing here")
                         self.freeze(self.model.encoder_B)
                         output_A, output_B = self.model(seq_A, "A")
-                        repA_public = self.model.encode(seq_A_public,"A")
-                        gen_repA_public = gen_model.encode(seq_A_public,"A")
+                        repA_public, repA_public1 = self.model.encode(seq_A_public,"A")
+                        gen_repA_public, gen_repA_public1 = gen_model.encode(seq_A_public,"A")
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
                         lossKD = self.criterion_KL(repA_public, gen_repA_public)
+                        lossKD1 = self.criterion_KL(repA_public1, gen_repA_public1)
                         norm2loss = torch.dist(repA_public, gen_repA_public, p=2)
+                        norm2loss1 = torch.dist(repA_public1, gen_repA_public1, p=2)
                         lossJSD = self.criterion_JSD(repA_public, gen_repA_public)
+                        lossJSD1 = self.criterion_JSD(repA_public1, gen_repA_public1)
 
                         lossTrue = loss_A + loss_B
                         if Local_CDKT_metric == "KL":
-                            loss = lossTrue + alpha * lossKD
+                            loss = lossTrue + alpha * lossKD + alpha * lossKD1
                         elif Local_CDKT_metric == "Norm2":
-                            loss = lossTrue + alpha * norm2loss
+                            loss = lossTrue + alpha * norm2loss + alpha * norm2loss1
                         elif Local_CDKT_metric == "JSD":
-                            loss = lossTrue + alpha * lossJSD
+                            loss = lossTrue + alpha * lossJSD + alpha * lossJSD1
+
                         # print("loss is",loss)
                         loss.backward()
                         self.optimizer.step()
@@ -213,20 +223,23 @@ class userMultimodalRep(User):
                         # Train with input of modality B and output of modalities A&B
                         self.freeze(self.model.encoder_A)
                         output_A, output_B = self.model(seq_B, "B")
-                        repB_public = self.model.encode(seq_B_public, "B")
-                        gen_repB_public = gen_model.encode(seq_B_public, "B")
+                        repB_public, repB_public1 = self.model.encode(seq_B_public, "B")
+                        gen_repB_public, gen_repB_public1 = gen_model.encode(seq_B_public, "B")
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
                         lossKD = self.criterion_KL(repB_public, gen_repB_public)
+                        lossKD1 = self.criterion_KL(repB_public1, gen_repB_public1)
                         norm2loss = torch.dist(repB_public, gen_repB_public, p=2)
+                        norm2loss1 = torch.dist(repB_public1, gen_repB_public1, p=2)
                         lossJSD = self.criterion_JSD(repB_public, gen_repB_public)
+                        lossJSD1 = self.criterion_JSD(repB_public1, gen_repB_public1)
                         lossTrue = loss_A + loss_B
                         if Local_CDKT_metric == "KL":
-                            loss = lossTrue + beta * lossKD
+                            loss = lossTrue + beta * lossKD + beta * lossKD1
                         elif Local_CDKT_metric == "Norm2":
-                            loss = lossTrue + beta * norm2loss
+                            loss = lossTrue + beta * norm2loss + beta * norm2loss1
                         elif Local_CDKT_metric == "JSD":
-                            loss = lossTrue + beta * lossJSD
+                            loss = lossTrue + beta * lossJSD + beta * lossJSD1
 
 
                         loss.backward()
@@ -259,18 +272,21 @@ class userMultimodalRep(User):
                         self.freeze(self.model.decoder_B)
 
                         _, _, output, _ = self.model(x_A=seq_A)
-                        repA_public = self.model.encode(seq_A_public, "A")
-                        gen_repA_public = gen_model.encode(seq_A_public, "A")
+                        repA_public, repA_public1 = self.model.encode(seq_A_public, "A")
+                        gen_repA_public, gen_repA_public1 = gen_model.encode(seq_A_public, "A")
                         lossKD = self.criterion_KL(repA_public, gen_repA_public)
+                        lossKD1 = self.criterion_KL(repA_public1, gen_repA_public1)
                         norm2loss = torch.dist(repA_public, gen_repA_public, p=2)
+                        norm2loss1 = torch.dist(repA_public1, gen_repA_public1, p=2)
                         lossJSD = self.criterion_JSD(repA_public, gen_repA_public)
+                        lossJSD1 = self.criterion_JSD(repA_public1, gen_repA_public1)
                         lossTrue = self.criterion_MSE(output, seq_A[:, inv_idx, :])
                         if Local_CDKT_metric == "KL":
-                            loss = lossTrue + alpha * lossKD
+                            loss = lossTrue + alpha * lossKD + alpha * lossKD1
                         elif Local_CDKT_metric == "Norm2":
-                            loss = lossTrue + alpha * norm2loss
+                            loss = lossTrue + alpha * norm2loss + alpha * norm2loss1
                         elif Local_CDKT_metric == "JSD":
-                            loss = lossTrue + alpha * lossJSD
+                            loss = lossTrue + alpha * lossJSD + alpha * lossJSD1
                         # sub_epoch_losses.append(loss.item())
                         loss.backward()
                         self.optimizer.step()
@@ -284,18 +300,21 @@ class userMultimodalRep(User):
                         self.freeze(self.model.decoder_A)
 
                         _, _, _, output = self.model(x_B=seq_B)
-                        repB_public = self.model.encode(seq_B_public, "B")
-                        gen_repB_public = gen_model.encode(seq_B_public, "B")
+                        repB_public, repB_public1 = self.model.encode(seq_B_public, "B")
+                        gen_repB_public, gen_repB_public1 = gen_model.encode(seq_B_public, "B")
                         lossKD = self.criterion_KL(repB_public, gen_repB_public)
+                        lossKD1 = self.criterion_KL(repB_public1, gen_repB_public1)
                         norm2loss = torch.dist(repB_public, gen_repB_public, p=2)
+                        norm2loss1 = torch.dist(repB_public1, gen_repB_public1, p=2)
                         lossJSD = self.criterion_JSD(repB_public, gen_repB_public)
+                        lossJSD1 = self.criterion_JSD(repB_public1, gen_repB_public1)
                         lossTrue = self.criterion_MSE(output, seq_B[:, inv_idx, :])
                         if Local_CDKT_metric == "KL":
-                            loss = lossTrue + beta * lossKD
+                            loss = lossTrue + beta * lossKD + beta * lossKD1
                         elif Local_CDKT_metric == "Norm2":
-                            loss = lossTrue + beta * norm2loss
+                            loss = lossTrue + beta * norm2loss + beta * norm2loss1
                         elif Local_CDKT_metric == "JSD":
-                            loss = lossTrue + beta * lossJSD
+                            loss = lossTrue + beta * lossJSD + beta * lossJSD1
                         # sub_epoch_losses.append(loss.item())
                         loss.backward()
                         self.optimizer.step()
@@ -306,23 +325,29 @@ class userMultimodalRep(User):
                         self.unfreeze(self.model.decoder_A)
                     elif self.modality == "AB":
                         rep_A, rep_B, output_A, output_B = self.model(x_A=seq_A, x_B=seq_B)
-                        repA_public = self.model.encode(seq_A_public, "A")
-                        gen_repA_public = gen_model.encode(seq_A_public, "A")
-                        repB_public = self.model.encode(seq_B_public, "B")
-                        gen_repB_public = gen_model.encode(seq_B_public, "B")
+                        repA_public, repA_public1 = self.model.encode(seq_A_public, "A")
+                        gen_repA_public, gen_repA_public1 = gen_model.encode(seq_A_public, "A")
+                        repB_public, repB_public1 = self.model.encode(seq_B_public, "B")
+                        gen_repB_public, gen_repB_public1 = gen_model.encode(seq_B_public, "B")
                         lossKD_A = self.criterion_KL(repA_public, gen_repA_public)
                         norm2loss_A = torch.dist(repA_public, gen_repA_public, p=2)
                         lossJSD_A = self.criterion_JSD(repA_public, gen_repA_public)
                         lossKD_B = self.criterion_KL(repB_public, gen_repB_public)
                         norm2loss_B = torch.dist(repB_public, gen_repB_public, p=2)
                         lossJSD_B = self.criterion_JSD(repB_public, gen_repB_public)
+                        lossKD_A1 = self.criterion_KL(repA_public1, gen_repA_public1)
+                        norm2loss_A1 = torch.dist(repA_public1, gen_repA_public1, p=2)
+                        lossJSD_A1 = self.criterion_JSD(repA_public1, gen_repA_public1)
+                        lossKD_B1 = self.criterion_KL(repB_public1, gen_repB_public1)
+                        norm2loss_B1 = torch.dist(repB_public1, gen_repB_public1, p=2)
+                        lossJSD_B1 = self.criterion_JSD(repB_public1, gen_repB_public1)
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
                         loss_dcc = self.criterion_DCC.loss(rep_A, rep_B)
                         if Local_CDKT_metric == "KL":
-                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * lossKD_A +beta*lossKD_B
+                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * (lossKD_A+lossKD_A1) +beta*(lossKD_B+lossKD_B1)
                         elif Local_CDKT_metric == "Norm2":
-                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * norm2loss_A + beta*norm2loss_B
+                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * (norm2loss_A+norm2loss_A1) + beta*(norm2loss_B+norm2loss_B1)
                         elif Local_CDKT_metric == "JSD":
                             loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * lossJSD_A + beta*lossJSD_B
 

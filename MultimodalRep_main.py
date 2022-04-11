@@ -60,8 +60,9 @@ def main(experiment, dataset, algorithm, model, model_server,  batch_size, learn
 
         if (model == "split_LSTM"):
                     model = SplitLSTMAutoEncoder(input_size_A, input_size_B, rep_size).double().to(device), model
+                    model = SplitLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
         elif (model == "DCCAE_LSTM"):
-                    model = DCCLSTMAutoEncoder(input_size_A, input_size_B, rep_size).double().to(device), model
+                    model = DCCLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
 
         if (model_server == "MLP"):
                     model_server = MLP(rep_size,n_classes).double().to(device), model_server
