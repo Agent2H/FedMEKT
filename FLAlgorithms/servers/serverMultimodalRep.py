@@ -60,22 +60,11 @@ class MultimodalRep(Dem_Server):
         if(self.sub_data):
             randomList = self.get_partion(self.total_users)
         #
-        # self.publicdatasetloader = DataLoader(read_public_data(dataset[0], dataset[1]), self.batch_size, shuffle=True)  # no shuffle
-        # # self.publicloader= list(enumerate(self.publicdatasetloader))
-        # self.enum_publicDS = enumerate(self.publicdatasetloader)
-        # self.publicloader =[]
-        # for b, (x, y) in self.enum_publicDS:
-        #     self.publicloader.append((b,(x,y)))
-        #     if(b<1): print(y)
 
         # self.publicdatasetlist= DataLoader(public_data, self.batch_size, shuffle=False)  # no shuffle
         sample=[]
         testing_sample=[]
 
-        # while True:
-        #     public_data = split_public(load_data(dataset)[2])
-        #     if set(public_data["y"]) == set(server_test["y"]):
-        #         break
         server_test = load_data(dataset)[1]
         public_data = load_data(dataset)[2]
         self.public = public_data
@@ -300,6 +289,7 @@ class MultimodalRep(Dem_Server):
                     self.freeze(self.model.encoder_B)
                     output_A, output_B = self.model(seq_A_public, "A")
                     repA_public, repA_public1 = self.model.encode(seq_A_public, "A")
+                    # print("size of rep is ", repA_public.shape)
                     repA_avg_local = torch.from_numpy(repA_avg[idx_end_public]).double().to(self.device)
                     repA1_avg_local = torch.from_numpy(repA1_avg[idx_end_public]).double().to(self.device)
                     # print("global size",repA_public.size())
@@ -315,12 +305,12 @@ class MultimodalRep(Dem_Server):
 
                     lossTrue = loss_A + loss_B
                     if Global_CDKT_metric == "KL":
-                        loss = lossTrue + eta * (lossKD + lossKD1)
+                        loss = lossTrue + eta * lossKD + sigma*lossKD1
                     elif Global_CDKT_metric == "Norm2":
-                        loss = lossTrue + eta *( norm2loss+norm2loss1)
+                        loss = lossTrue + eta *norm2loss+ sigma*norm2loss1
                     elif Global_CDKT_metric == "JSD":
                         # print("doing here")
-                        loss = lossTrue + eta * (lossJSD + lossJSD1)
+                        loss = lossTrue + eta * lossJSD + sigma*lossJSD1
                     loss.backward()
                     self.optimizer_glob_ae.step()
                     if torch.cuda.is_available():
@@ -343,11 +333,11 @@ class MultimodalRep(Dem_Server):
                     lossJSD1 = self.criterion_JSD(repB_public1, repB1_avg_local)
                     lossTrue = loss_A + loss_B
                     if Global_CDKT_metric == "KL":
-                        loss = lossTrue + gamma * (lossKD+lossKD1)
+                        loss = lossTrue + gamma * lossKD+ sigma*lossKD1
                     elif Global_CDKT_metric == "Norm2":
-                        loss = lossTrue + gamma * (norm2loss + norm2loss1)
+                        loss = lossTrue + gamma * norm2loss + sigma*norm2loss1
                     elif Global_CDKT_metric == "JSD":
-                        loss = lossTrue + gamma * (lossJSD + lossJSD1)
+                        loss = lossTrue + gamma * lossJSD + sigma*lossJSD1
                     loss.backward()
                     self.optimizer_glob_ae.step()
                     if torch.cuda.is_available():
@@ -377,11 +367,11 @@ class MultimodalRep(Dem_Server):
                     loss_B = self.criterion_MSE(output_B, seq_B_public[:, inv_idx_public, :])
                     loss_dcc = self.criterion_DCC.loss(rep_A, rep_B)
                     if Global_CDKT_metric == "KL":
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * (lossKD_A+lossKD_A1) + gamma * (lossKD_B+lossKD_B1)
+                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * lossKD_A + gamma * lossKD_B  +sigma*(lossKD_A1+lossKD_B1)
                     elif Global_CDKT_metric == "Norm2":
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * (norm2loss_A+ norm2loss_A1) + gamma * (norm2loss_B +norm2loss_B1)
+                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * norm2loss_A + gamma * norm2loss_B + sigma*(norm2loss_A1+norm2loss_B1)
                     elif Global_CDKT_metric == "JSD":
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * (lossJSD_A +lossJSD_A1) + gamma * (lossJSD_B + lossJSD_B1)
+                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * lossJSD_A  + gamma * lossJSD_B + sigma*(lossJSD_A1+ lossJSD_B1)
 
                     loss.backward()
                     self.optimizer_glob_ae.step()

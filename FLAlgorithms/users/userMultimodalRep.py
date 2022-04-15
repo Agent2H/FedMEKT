@@ -207,11 +207,11 @@ class userMultimodalRep(User):
 
                         lossTrue = loss_A + loss_B
                         if Local_CDKT_metric == "KL":
-                            loss = lossTrue + alpha * lossKD + alpha * lossKD1
+                            loss = lossTrue + alpha * lossKD + lamda * lossKD1
                         elif Local_CDKT_metric == "Norm2":
-                            loss = lossTrue + alpha * norm2loss + alpha * norm2loss1
+                            loss = lossTrue + alpha * norm2loss + lamda * norm2loss1
                         elif Local_CDKT_metric == "JSD":
-                            loss = lossTrue + alpha * lossJSD + alpha * lossJSD1
+                            loss = lossTrue + alpha * lossJSD + lamda * lossJSD1
 
                         # print("loss is",loss)
                         loss.backward()
@@ -235,11 +235,11 @@ class userMultimodalRep(User):
                         lossJSD1 = self.criterion_JSD(repB_public1, gen_repB_public1)
                         lossTrue = loss_A + loss_B
                         if Local_CDKT_metric == "KL":
-                            loss = lossTrue + beta * lossKD + beta * lossKD1
+                            loss = lossTrue + beta * lossKD + lamda * lossKD1
                         elif Local_CDKT_metric == "Norm2":
-                            loss = lossTrue + beta * norm2loss + beta * norm2loss1
+                            loss = lossTrue + beta * norm2loss + lamda * norm2loss1
                         elif Local_CDKT_metric == "JSD":
-                            loss = lossTrue + beta * lossJSD + beta * lossJSD1
+                            loss = lossTrue + beta * lossJSD + lamda * lossJSD1
 
 
                         loss.backward()
@@ -345,11 +345,11 @@ class userMultimodalRep(User):
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
                         loss_dcc = self.criterion_DCC.loss(rep_A, rep_B)
                         if Local_CDKT_metric == "KL":
-                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * (lossKD_A+lossKD_A1) +beta*(lossKD_B+lossKD_B1)
+                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * lossKD_A +beta*lossKD_B + lamda*(lossKD_A1+lossKD_B1)
                         elif Local_CDKT_metric == "Norm2":
-                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * (norm2loss_A+norm2loss_A1) + beta*(norm2loss_B+norm2loss_B1)
+                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * norm2loss_A  + beta*norm2loss_B+ lamda*(norm2loss_A1+  norm2loss_B1)
                         elif Local_CDKT_metric == "JSD":
-                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * (lossJSD_A+ lossJSD_A1) + beta*(lossJSD_B+lossJSD_B1)
+                            loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + alpha * lossJSD_A + beta*lossJSD_B  + lamda*(lossJSD_A1+lossJSD_B1)
 
                         loss.backward()
                         self.optimizer.step()

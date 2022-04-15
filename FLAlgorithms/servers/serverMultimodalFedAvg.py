@@ -129,11 +129,11 @@ class MultimodalFedAvg(Dem_Server):
                     y = y_A_train[:, idx_start:idx_end]
 
                     with torch.no_grad():
-                        rpts = self.model.encode(seq, "A")
+                        rpts,_ = self.model.encode(seq, "A")
                     targets = torch.from_numpy(y.flatten()).to(self.device)
                     self.optimizer.zero_grad()
                     # print("representation size is",rpts.size())
-                    output = self.model_server(rpts)
+                    output= self.model_server(rpts)
                     loss = self.criterion(output, targets.long())
                     top_p, top_class = output.topk(1, dim=1)
                     equals = top_class == targets.view(*top_class.shape).long()
@@ -159,7 +159,7 @@ class MultimodalFedAvg(Dem_Server):
                     y = y_B_train[:, idx_start:idx_end]
 
                     with torch.no_grad():
-                        rpts = self.model.encode(seq, "B")
+                        rpts,_ = self.model.encode(seq, "B")
                     targets = torch.from_numpy(y.flatten()).to(self.device)
                     self.optimizer.zero_grad()
                     output = self.model_server(rpts)
@@ -202,7 +202,7 @@ class MultimodalFedAvg(Dem_Server):
 
             inputs = torch.from_numpy(x).double().to(self.device)
             targets = torch.from_numpy(y.flatten()).to(self.device)
-            rpts = self.model.encode(inputs, self.test_modality)
+            rpts,_ = self.model.encode(inputs, self.test_modality)
             output = self.model_server(rpts)
 
             loss = self.criterion(output, targets.long())

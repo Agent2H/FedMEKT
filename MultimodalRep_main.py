@@ -59,7 +59,7 @@ def main(experiment, dataset, algorithm, model, model_server,  batch_size, learn
         # Generate model
 
         if (model == "split_LSTM"):
-                    model = SplitLSTMAutoEncoder(input_size_A, input_size_B, rep_size).double().to(device), model
+                    # model = SplitLSTMAutoEncoder(input_size_A, input_size_B, rep_size).double().to(device), model
                     model = SplitLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
         elif (model == "DCCAE_LSTM"):
                     model = DCCLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model

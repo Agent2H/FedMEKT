@@ -7,7 +7,7 @@ from torch import nn
 from torchvision.models import resnet18
 from torchvision import transforms
 from PIL import Image
-
+from Setting import *
 
 class LSTMEncoder(nn.Module):
     def __init__(self, input_size, representation_size, num_layers=1, batch_first=True):
@@ -150,15 +150,16 @@ class DCCLSTMAutoEncoder_Embedding(nn.Module):
         super(DCCLSTMAutoEncoder_Embedding, self).__init__()
         self.batch_first = batch_first
         self.encoder_A = LSTMEncoder(
-            input_size=input_size_A, representation_size=100, num_layers=num_layers, batch_first=batch_first)
+            input_size=input_size_A, representation_size=Num_neurons, num_layers=num_layers, batch_first=batch_first)
         self.decoder_A = LSTMDecoder(representation_size=representation_size,
                                      output_size=input_size_A, num_layers=num_layers, batch_first=batch_first)
         self.encoder_B = LSTMEncoder(
-            input_size=input_size_B, representation_size=100, num_layers=num_layers, batch_first=batch_first)
+            input_size=input_size_B, representation_size=Num_neurons, num_layers=num_layers, batch_first=batch_first)
         self.decoder_B = LSTMDecoder(representation_size=representation_size,
                                      output_size=input_size_B, num_layers=num_layers, batch_first=batch_first)
 
-        self.embedding_layer = nn.Linear(100, representation_size)
+        self.embedding_layerA = nn.Linear(Num_neurons, representation_size)
+        self.embedding_layerB = nn.Linear(Num_neurons, representation_size)
     def forward(self, x_A=None, x_B=None):
         """Takes the input from two modalities and forwards.
 
@@ -173,7 +174,7 @@ class DCCLSTMAutoEncoder_Embedding(nn.Module):
             # Forward in the modality A pipe line
             seq_len_A = x_A.shape[1]
             out_A1 = self.encoder_A(x_A)
-            out_A = self.embedding_layer(out_A1)
+            out_A = F.relu(self.embedding_layerA(out_A1))
             rep_A = out_A[:, -1,
                           :].unsqueeze(1) if self.batch_first else out_A[-1, :, :].unsqueeze(0)
             rep_seq_A = rep_A.expand(-1, seq_len_A, -1)
@@ -186,7 +187,7 @@ class DCCLSTMAutoEncoder_Embedding(nn.Module):
             # Forward in the modality B pipe line
             seq_len_B = x_B.shape[1]
             out_B1 = self.encoder_B(x_B)
-            out_B = self.embedding_layer(out_B1)
+            out_B = F.relu(self.embedding_layerB(out_B1))
             rep_B = out_B[:, -1,
                           :].unsqueeze(1) if self.batch_first else out_B[-1, :, :].unsqueeze(0)
             rep_seq_B = rep_B.expand(-1, seq_len_B, -1)
@@ -200,7 +201,7 @@ class DCCLSTMAutoEncoder_Embedding(nn.Module):
         assert (modality == "A" or modality ==
                 "B"), "Modality is neither A nor B"
         out1 = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
-        out = self.embedding_layer(out1)
+        out = F.relu(self.embedding_layerA(out1)) if modality == "A" else F.relu(self.embedding_layerB(out1))
         return out, out1
 
 
@@ -209,21 +210,23 @@ class SplitLSTMAutoEncoder_Embedding(nn.Module):
         super(SplitLSTMAutoEncoder_Embedding, self).__init__()
         self.batch_first = batch_first
         self.encoder_A = LSTMEncoder(
-            input_size=input_size_A, representation_size=100, num_layers=num_layers, batch_first=batch_first)
+            input_size=input_size_A, representation_size=Num_neurons, num_layers=num_layers, batch_first=batch_first)
         self.decoder_A = LSTMDecoder(representation_size=representation_size,
                                      output_size=input_size_A, num_layers=num_layers, batch_first=batch_first)
         self.encoder_B = LSTMEncoder(
-            input_size=input_size_B, representation_size=100, num_layers=num_layers, batch_first=batch_first)
+            input_size=input_size_B, representation_size=Num_neurons, num_layers=num_layers, batch_first=batch_first)
         self.decoder_B = LSTMDecoder(representation_size=representation_size,
                                      output_size=input_size_B, num_layers=num_layers, batch_first=batch_first)
-        self.embedding_layer = nn.Linear(100, representation_size)
+        self.embedding_layerA = nn.Linear(Num_neurons, representation_size)
+        self.embedding_layerB = nn.Linear(Num_neurons, representation_size)
+        # self.dropout = nn.Dropout(p=.2)
     def forward(self, x, modality):
         assert (modality == "A" or modality ==
                 "B"), "Modality is neither A nor B"
 
         seq_len = x.shape[1] if self.batch_first else x.shape[0]
         out1 = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
-        out=self.embedding_layer(out1)
+        out= F.relu(self.embedding_layerA(out1)) if modality == "A" else F.relu(self.embedding_layerB(out1))
         representation = out[:, -1, :].unsqueeze(
             1) if self.batch_first else out[-1, :, :].unsqueeze(0)
         representation_seq = representation.expand(-1, seq_len, -1)
@@ -235,7 +238,7 @@ class SplitLSTMAutoEncoder_Embedding(nn.Module):
         assert (modality == "A" or modality ==
                 "B"), "Modality is neither A nor B"
         out1 = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
-        out = self.embedding_layer(out1)
+        out = F.relu(self.embedding_layerA(out1)) if modality == "A" else F.relu(self.embedding_layerB(out1))
         return out, out1
 
 class MLP(nn.Module):
