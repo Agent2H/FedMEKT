@@ -75,11 +75,13 @@ class Server:
         assert (self.users is not None and len(self.users) > 0)
         for user in self.users:
             user.set_parameters(self.model)
+
     
     def send_meta_parameters(self):
         assert (self.users is not None and len(self.users) > 0)
         for user in self.users:
             user.set_meta_parameters(self.model)
+
 
     def send_meta_parameters_totest(self):
         assert (self.users is not None and len(self.test_users) > 0)
@@ -125,7 +127,7 @@ class Server:
         n_B=0
         for user in self.selected_users:
             # total_train += user.train_samples
-            if user.modality == "A " or user.modality == "AB":
+            if user.modality == "A" or user.modality == "AB":
                 n_A += user.get_weight()
                 # print("weight of user is",user.get_weight())
             if user.modality == "B"  or user.modality == "AB":
