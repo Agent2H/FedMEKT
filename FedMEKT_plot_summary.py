@@ -287,11 +287,11 @@ def plot_mhealth():
     ax1.plot(mmfedavgAcceGyro_testAcce['root_test'], label="Mm-FedAvg(Acce)",  color=color["gen"], marker=marker["gen"],
              markevery=markers_on)
 
-    ax1.plot(np.arange(len(mmfedavgAcceGyro_testGyro['root_test'])), mmfedavgAcceGyro_testGyro['root_test'], color=color["gen"],
+    ax1.plot(np.arange(len(mmfedavgAcceGyro_testGyro['root_test'])), mmfedavgAcceGyro_testGyro['root_test'], color=color["c"],
              marker=marker["cgen"], markevery=markers_on,linestyle='dashdot',
              label="Mm-FedAvg(Gyro)")
     ax1.plot(np.arange(len( mmfedEKTAcceGyro_testAcce['root_test'])),  mmfedEKTAcceGyro_testAcce['root_test'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
              label="FedMEKT(Acce)")
     ax1.plot(np.arange(len( mmfedEKTAcceGyro_testGyro['root_test'])),  mmfedEKTAcceGyro_testGyro['root_test'],
@@ -315,11 +315,11 @@ def plot_mhealth():
              marker=marker["gen"], markevery=markers_on,
              label="Mm-FedAvg(Gyro)")
     ax2.plot(np.arange(len( mmfedavgGyroMage_testMage['root_test'])),  mmfedavgGyroMage_testMage['root_test'],
-             color=color["gen"],linestyle='dashdot',
+             color=color["c"],linestyle='dashdot',
              marker=marker["cgen"], markevery=markers_on,
              label="Mm-FedAvg(Mage)")
     ax2.plot(np.arange(len( mmfedEKTGyroMage_testGyro['root_test'])),  mmfedEKTGyroMage_testGyro['root_test'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
              label="FedMEKT(Gyro)")
     ax2.plot(np.arange(len( mmfedEKTGyroMage_testMage['root_test'])),  mmfedEKTGyroMage_testMage['root_test'],
@@ -338,11 +338,11 @@ def plot_mhealth():
              marker=marker["gen"], markevery=markers_on,
              label="Mm-FedAvg(Acce)")
     ax3.plot(np.arange(len(mmfedavgAcceMage_testMage['root_test'])), mmfedavgAcceMage_testMage['root_test'],
-             color=color["gen"],linestyle='dashdot',
+             color=color["c"],linestyle='dashdot',
              marker=marker["cgen"], markevery=markers_on,
              label="Mm-FedAvg(Mage)")
     ax3.plot(np.arange(len(mmfedEKTAcceMage_testAcce['root_test'])), mmfedEKTAcceMage_testAcce['root_test'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
              label="FedMEKT(Acce)")
     ax3.plot(np.arange(len(mmfedEKTAcceMage_testMage['root_test'])), mmfedEKTAcceMage_testMage['root_test'],
@@ -496,11 +496,11 @@ def plot_opp():
     ax1.plot(mmfedavgAcceGyro_testAcce['root_test'], label="Mm-FedAvg(Acce)",  color=color["gen"], marker=marker["gen"],
              markevery=markers_on)
 
-    ax1.plot(np.arange(len(mmfedavgAcceGyro_testGyro['root_test'])), mmfedavgAcceGyro_testGyro['root_test'], color=color["gen"],
+    ax1.plot(np.arange(len(mmfedavgAcceGyro_testGyro['root_test'])), mmfedavgAcceGyro_testGyro['root_test'], color=color["c"],
              marker=marker["cgen"], markevery=markers_on,linestyle='dashdot',
              label="Mm-FedAvg(Gyro)")
     ax1.plot(np.arange(len(mmfedEKTAcceGyro_testAcce['root_test'])), mmfedEKTAcceGyro_testAcce['root_test'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
              label="FedMEKT(Acce)")
     ax1.plot(np.arange(len(mmfedEKTAcceGyro_testGyro['root_test'])), mmfedEKTAcceGyro_testGyro['root_test'],

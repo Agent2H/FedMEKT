@@ -5,7 +5,7 @@ import os
 import torch.multiprocessing as mp
 from tqdm import tqdm
 import torch.nn as nn
-from FLAlgorithms.users.userMultimodalRep import userMultimodalRep
+from FLAlgorithms.users.userFedMEKT import userMultimodalRep
 from FLAlgorithms.users.userbase_dem import User
 from FLAlgorithms.servers.serverbase_dem import Dem_Server
 from Setting import rs_file_path, N_clients

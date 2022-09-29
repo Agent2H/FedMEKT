@@ -15,7 +15,7 @@ from FLAlgorithms.servers.serverlocal import FedLocal
 from FLAlgorithms.servers.serverglobal import FedGlobal
 from FLAlgorithms.servers.serverCDKT import CDKT
 from FLAlgorithms.servers.serverMultimodalFedAvg import MultimodalFedAvg
-from FLAlgorithms.servers.serverMultimodalRep import MultimodalRep
+from FLAlgorithms.servers.serverFedMEKT import MultimodalRep
 from utils.model_utils import read_data, load_data, split_server_train
 from FLAlgorithms.trainmodel.ae_model import *
 from utils.plot_utils import *
@@ -75,57 +75,20 @@ def main(experiment, dataset, algorithm, model, model_server,  batch_size, learn
 
         # select algorithm
 
-
-
-        if(algorithm == "FedAvg"):
-            if(commet):
-                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(learning_rate) + "_" + str(num_glob_iters) + "_"+ str(local_epochs) + "_"+ str(numusers))
-            server = FedAvg(experiment, device, data, algorithm, model, client_model,batch_size, learning_rate, beta, L_k, num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
-
-        elif(algorithm == "PerAvg"):
-            if(commet):
-                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(learning_rate) + "_" + str(personal_learning_rate) + "_" + str(learning_rate)+  "_" + str(num_glob_iters) + "_"+ str(local_epochs) + "_"+ str(numusers))
-            server = PerAvg(experiment, device, data, algorithm, model, batch_size, learning_rate, beta, L_k, num_glob_iters, local_epochs, optimizer, numusers, i, cutoff)
-
-        elif (algorithm == "CDKT"):
-            if (commet):
-                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
-                    learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
-            server = CDKT(experiment, device, data,  algorithm, model, client_model, batch_size, learning_rate, beta, L_k, num_glob_iters, local_epochs, optimizer, numusers, i, cutoff,args)
-
-        elif (algorithm == "mmFedAvg"):
+        if (algorithm == "mmFedAvg"):
             if (commet):
                 experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
                     learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
             server = MultimodalFedAvg(train_A,train_B, experiment, device, data, algorithm, model,  model_server,  batch_size, learning_rate,
                           num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
 
-        elif (algorithm == "mmFedEKT"):
+        elif (algorithm == "FedMEKT"):
             if (commet):
                 experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
                     learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
             server = MultimodalRep(train_A, train_B, experiment, device, data, algorithm, model, model_server,
                                       batch_size, learning_rate, num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
 
-        elif(algorithm == "FedU"):
-            if(commet):
-                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(learning_rate)+ "_" + str(L_k) + "L_K"+ "_" + str(num_glob_iters) + "_"+ str(local_epochs) + "_"+ str(numusers))
-            server = FedU(experiment, device, data, algorithm, model, batch_size, learning_rate, beta, L_k, num_glob_iters, local_epochs, optimizer, numusers, K, i, cutoff)
-
-        elif(algorithm == "pFedMe"):
-            if(commet):
-                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(learning_rate) + "_" + str(personal_learning_rate) +  "_" + str(num_glob_iters) + "_"+ str(local_epochs) + "_"+ str(numusers))
-            server = pFedMe(experiment, device, data, algorithm, model, batch_size, learning_rate, beta, L_k, num_glob_iters, local_epochs, optimizer, numusers, K, personal_learning_rate, i, cutoff)
-
-        elif(algorithm == "Local"):
-            if(commet):
-                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(learning_rate) + "_" + str(L_k) + "_" + str(num_glob_iters) + "_"+ str(local_epochs) + "_"+ str(numusers))
-            server = FedLocal(experiment, device, data, algorithm, model, batch_size, learning_rate, beta, L_k, num_glob_iters, local_epochs, optimizer, numusers, i, cutoff)
-
-        elif(algorithm == "Global"):
-            if(commet):
-                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(learning_rate) + "_" + str(L_k) + "_" + str(num_glob_iters) + "_"+ str(local_epochs) + "_"+ str(numusers))
-            server = FedGlobal(experiment, device, data, algorithm, model, batch_size, learning_rate, beta, L_k, num_glob_iters, local_epochs, optimizer, numusers, i, cutoff)
         else:
             print("Algorithm is invalid")
             return

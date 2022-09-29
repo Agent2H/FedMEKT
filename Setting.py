@@ -20,7 +20,7 @@ data_path = "./data/"
 DATASETS= ["mhealth","opp","ur_fall"]
 DATASET = DATASETS[2]
 #Algorithm selection
-RUNNING_ALGS = ["mmFedAvg","mmFedEKT"]
+RUNNING_ALGS = ["mmFedAvg","FedMEKT"]
 RUNNING_ALG = RUNNING_ALGS[1]
 
 #Model selection
@@ -31,7 +31,7 @@ CDKT_metrics = ["KL","Norm2","JSD","Cos","Con"]
 Global_CDKT_metric = CDKT_metrics[0]   # Global distance metric
 Local_CDKT_metric = CDKT_metrics[0]    # Local distance metric
 
-PUBLIC_RATIO=0.5
+PUBLIC_RATIO=1
 #Algorithm Parameter
 Num_neurons=32
 ALPHA = 100

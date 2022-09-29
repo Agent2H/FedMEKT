@@ -21,7 +21,7 @@ def args_parser():
 
     parser.add_argument("--dataset", type=str, default=Input_DS, choices=["mhealth","opp","ur_fall"])
     # parser.add_argument("--server_model", type=str, default="cnn", choices=["cnn","resnet"])
-    parser.add_argument("--algorithm", type=str, default=Input_Alg, choices=["mmFedAvg","mmFedEKT"])
+    parser.add_argument("--algorithm", type=str, default=Input_Alg, choices=["mmFedAvg","FedMEKT"])
     parser.add_argument("--model", type=str, default=MODEL_AE, choices=["split_LSTM", "DCCAE_LSTM"])
     parser.add_argument("--model_server", type=str, default="MLP", choices=[ "MLP"])
 
