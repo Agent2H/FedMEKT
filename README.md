@@ -19,7 +19,7 @@ Running Instruction
 
 **Modify parameters setting in `Setting.py` to run the code**
 
-Please refer the file `Tuning results` to access different parameter settings of this  work.
+
 
 --
 
