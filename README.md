@@ -13,13 +13,13 @@ Running Instruction
 
 
 
-**Main File:** MultimodalRep_main.py
+**Main File:** FedMEKT_main.py
 
 
 
 **Modify parameters setting in `Setting.py` to run the code**
 
-Please refer the file `Tuning results` to access different parameter settings of this  work.
+
 
 --
 
