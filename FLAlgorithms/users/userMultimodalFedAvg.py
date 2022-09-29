@@ -37,6 +37,7 @@ class UserMultimodalFedAvg(User):
         self.rep_size = rep_size
         self.criterion_DCC = DCCLoss(self.rep_size, self.device)
         self.alpha = ALPHA
+
         if DATASET == "ur_fall":
             self.batch_min = 16
             self.batch_max = 32
@@ -78,8 +79,13 @@ class UserMultimodalFedAvg(User):
     def train_ae(self, epochs):
 
         self.model.train()
+
         round_loss = []
-        for epoch in range(1, epochs + 1):
+        Rec_round_loss = []
+        KT_round_loss=[]
+        for epoch in range(epochs):
+            Rec_loss = []
+            KT_Loss = []
             epoch_losses = []
 
             batch_size = np.random.randint(
@@ -99,6 +105,8 @@ class UserMultimodalFedAvg(User):
                 idx_end = min(idx_end, seq_len)
 
                 if self.model_ae== "split_LSTM":
+                    ReconstructionLoss = []
+                    Knowledge_Transfer_Loss = []
                     if self.modality == "A" or self.modality == "AB":
                         x_A = A_train[:, idx_start:idx_end, :]
                         seq_A = torch.from_numpy(x_A).double().to(self.device)
@@ -148,6 +156,7 @@ class UserMultimodalFedAvg(User):
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
                         loss = loss_A + loss_B
+                        ReconstructionLoss.append(loss.item())
 
                         loss.backward()
                         self.optimizer.step()
@@ -161,7 +170,7 @@ class UserMultimodalFedAvg(User):
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
                         loss = loss_A + loss_B
-
+                        ReconstructionLoss.append(loss.item())
                         loss.backward()
                         self.optimizer.step()
                         if torch.cuda.is_available():
@@ -218,5 +227,10 @@ class UserMultimodalFedAvg(User):
                         self.optimizer.step()
                         if torch.cuda.is_available():
                             torch.cuda.empty_cache()
+                Rec_loss.extend(ReconstructionLoss)
+
+            Rec_round_loss.append(np.mean(Rec_loss))
+
+        return np.mean(Rec_round_loss)
 
         # self.clone_model_paramenter(self.model.parameters(), self.local_model)  # update the local model with new local weight

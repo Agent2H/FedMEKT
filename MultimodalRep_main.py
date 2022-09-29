@@ -7,7 +7,7 @@ import argparse
 import importlib
 import random
 import os
-from FLAlgorithms.servers.serveravg import FedAvg
+# from FLAlgorithms.servers.serveravg import FedAvg
 from FLAlgorithms.servers.serverpFedMe import pFedMe
 from FLAlgorithms.servers.serverperavg import PerAvg
 from FLAlgorithms.servers.serverFedU import FedU
@@ -60,12 +60,17 @@ def main(experiment, dataset, algorithm, model, model_server,  batch_size, learn
 
         if (model == "split_LSTM"):
                     # model = SplitLSTMAutoEncoder(input_size_A, input_size_B, rep_size).double().to(device), model
-                    model = SplitLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
+                    # model = SplitLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
+                    model = SplitLSTMAutoEncoder2(input_size_A, input_size_B, rep_size).double().to(device), model
         elif (model == "DCCAE_LSTM"):
                     model = DCCLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
 
         if (model_server == "MLP"):
-                    model_server = MLP(rep_size,n_classes).double().to(device), model_server
+                    if (dataset == "mhealth"):
+                        model_server = MLP(rep_size,n_classes).double().to(device), model_server
+                    else:
+                        model_server = MLP(rep_size, n_classes).double().to(device), model_server
+                        # model_server = MLP(Num_neurons, n_classes).double().to(device), model_server
 
 
         # select algorithm

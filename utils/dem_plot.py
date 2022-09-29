@@ -171,6 +171,126 @@ def plot_from_file():
     # print("AVG Clients Specialization - Testing:", f_data['cs_avg_data_test'])
     # print("AVG Clients Generalization - Testing:", f_data['cg_avg_data_test'])
     # print("Root performance - Testing:", f_data['root_test'])
+def plot_from_file2():
+    f_data = read_data(rs_file_path)
+    # if("dem" in RUNNING_ALG):
+    #     ### PLOT DENDROGRAM ####
+    #     plot_dendo_data_dem()
+    #     # dendo_data = f_data['dendo_data']
+    #     # dendo_data_round = f_data['dendo_data_round']
+    #     # i=0
+    #     # for m_linkage in dendo_data:
+    #     #     plot_dendrogram(m_linkage, dendo_data_round[i], RUNNING_ALG)
+    #     #     i+=1
+    print("DEM-AI --------->>>>> Plotting")
+    print("Algorithm:",RUNNING_ALG)
+    alg_name = RUNNING_ALG+ "_"
+
+    plt.figure(4)
+    plt.clf()
+    plt.plot(f_data['root_test'], label="Root_test", linestyle="--")
+    if("dem" in RUNNING_ALG):
+        # for k in range (K_Levels):
+            plt.plot(f_data['gs_level_test'][-2,:,0], label="Gr(K)_spec_test", linestyle="-.")
+            plt.plot(f_data['gg_level_test'][-2,:,0], label="Gr(K)_gen_test", linestyle="-.")
+
+    #
+    # plt.plot(np.arange(len(f_data['cs_avg_data_test'])), f_data['cs_avg_data_test'], label="Client_spec_test")
+    # plt.plot(np.arange(len(f_data['cg_avg_data_test'])), f_data['cg_avg_data_test'], label="Client_gen_test")
+    plt.legend()
+    plt.xlabel("Global Rounds")
+    plt.ylim(YLim, 1.02)
+    plt.grid()
+    plt.title("AVG Clients Model (Spec-Gen) Testing Accuracy")
+    plt.savefig(PLOT_PATH + alg_name+"AVGC_Spec_Gen_Testing.pdf")
+
+    plt.figure(7)
+    plt.clf()
+    plt.plot(f_data['loss'], linestyle="--", label="loss")
+    plt.plot(f_data['loss'])
+    plt.legend()
+    plt.xlabel("Global Rounds")
+    plt.ylim(0.5, 2.5)
+    plt.grid()
+    plt.title("Testing Loss")
+    plt.savefig(PLOT_PATH + alg_name + "Test_Loss.pdf")
+
+    plt.figure(8)
+    plt.clf()
+    plt.plot(f_data['rec_loss'], linestyle="--", label="rec_loss")
+    plt.plot(f_data['rec_loss'])
+    plt.legend()
+    plt.xlabel("Global Rounds")
+    plt.ylim(0.5, 2.5)
+    plt.grid()
+    plt.title("Training Client Reconstruction Loss")
+    plt.savefig(PLOT_PATH + alg_name + "C_Rec_Loss_Training.pdf")
+    #
+    if RUNNING_ALG=="mmFedEKT":
+        plt.figure(9)
+        plt.clf()
+        plt.plot(f_data['kt_loss'])
+        plt.plot(f_data['kt_loss'], linestyle="--", label="kt_loss")
+        plt.legend()
+        plt.xlabel("Global Rounds")
+        plt.ylim(-1, 1.02)
+        plt.grid()
+        plt.title("Training Client Knowledge Transfer Loss")
+        plt.savefig(PLOT_PATH + alg_name + "C_KT_Loss_Training.pdf")
+
+        plt.figure(10)
+        plt.clf()
+        plt.plot(f_data['global_rec_loss'])
+        plt.plot(f_data['global_rec_loss'], linestyle="--", label="root global_rec_loss")
+        plt.legend()
+        plt.xlabel("Global Rounds")
+        plt.ylim(0.5, 2.5)
+        plt.grid()
+        plt.title("Training Global Reconstruction Loss")
+        plt.savefig(PLOT_PATH + alg_name + "Global_Rec_Loss_Training.pdf")
+
+        plt.figure(11)
+        plt.clf()
+        plt.plot(f_data['global_kt_loss'])
+        plt.plot(f_data['global_kt_loss'], linestyle="--", label="global_kt_loss")
+        plt.legend()
+        plt.xlabel("Global Rounds")
+        plt.ylim(-1, 1.02)
+        plt.grid()
+        plt.title("Training Global Knowledge Transfer Loss")
+        plt.savefig(PLOT_PATH + alg_name + "Global_KT_Loss_Training.pdf")
+
+    plt.figure(12)
+    plt.clf()
+    plt.plot(f_data['local_f1_acc'])
+    plt.plot(f_data['local_f1_acc'], linestyle="--", label="local_f1_acc")
+    plt.legend()
+    plt.xlabel("Global Rounds")
+    plt.ylim(YLim, 1.02)
+    plt.grid()
+    plt.title("Testing Local F1 Accuracy")
+    plt.savefig(PLOT_PATH + alg_name + "Testing_Local_F1_Accuracy.pdf")
+
+    plt.figure(13)
+    plt.clf()
+    plt.plot(f_data['avg_local_f1_acc'])
+    plt.plot(f_data['avg_local_f1_acc'], linestyle="--", label="avg_local_f1_acc")
+    plt.legend()
+    plt.xlabel("Global Rounds")
+    plt.ylim(YLim, 1.02)
+    plt.grid()
+    plt.title("Avg Testing Local F1 Accuracy")
+    plt.savefig(PLOT_PATH + alg_name + "Avg_Testing_Local_F1_Accuracy.pdf")
+    plt.show()
+
+    # print("** Summary Results: ---- Training ----")
+    # print("AVG Clients Specialization - Training:", f_data['cs_avg_data_train'])
+    # print("AVG Clients Generalization - Training::", f_data['cg_avg_data_train'])
+    # print("Root performance - Training:", f_data['root_train'])
+    # print("** Summary Results: ---- Testing ----")
+    # print("AVG Clients Specialization - Testing:", f_data['cs_avg_data_test'])
+    # print("AVG Clients Generalization - Testing:", f_data['cg_avg_data_test'])
+    # print("Root performance - Testing:", f_data['root_test'])
 
 if __name__=='__main__':
     #

@@ -21,6 +21,21 @@ class LSTMEncoder(nn.Module):
         out, _ = self.lstm(x)
         return out
 
+class LSTMEncoder_2(nn.Module):
+    def __init__(self, input_size, representation_size, num_layers=1, batch_first=True):
+        super(LSTMEncoder_2, self).__init__()
+        self.lstm = nn.LSTM(input_size=input_size, hidden_size=Num_neurons,
+                            num_layers=num_layers, batch_first=batch_first)
+        self.lstm2 = nn.LSTM(input_size=Num_neurons, hidden_size=representation_size,
+                            num_layers=num_layers, batch_first=batch_first)
+        nn.init.orthogonal_(self.lstm.weight_ih_l0)
+        nn.init.orthogonal_(self.lstm.weight_hh_l0)
+
+    def forward(self, x):
+        out1, _ = self.lstm(x)
+        out,_ =self.lstm2(out1)
+        return out, out1
+
 
 class LSTMDecoder(nn.Module):
     def __init__(self, representation_size, output_size, num_layers=1, batch_first=True):
@@ -34,6 +49,21 @@ class LSTMDecoder(nn.Module):
         out, _ = self.lstm(x)
         return out
 
+
+class LSTMDecoder_2(nn.Module):
+    def __init__(self, representation_size, output_size, num_layers=1, batch_first=True):
+        super(LSTMDecoder_2, self).__init__()
+        self.lstm = nn.LSTM(input_size=representation_size, hidden_size=Num_neurons,
+                            num_layers=num_layers, batch_first=batch_first)
+        self.lstm2 = nn.LSTM(input_size=Num_neurons, hidden_size=output_size,
+                             num_layers=num_layers, batch_first=batch_first)
+        nn.init.orthogonal_(self.lstm.weight_ih_l0)
+        nn.init.orthogonal_(self.lstm.weight_hh_l0)
+
+    def forward(self, x):
+        out, _ = self.lstm(x)
+        out1,_ = self.lstm2(out)
+        return out1
 
 class LSTMAutoEncoder(nn.Module):
     def __init__(self, input_size, representation_size, num_layers=1, batch_first=True):
@@ -111,40 +141,6 @@ class DCCLSTMAutoEncoder(nn.Module):
                 "B"), "Modality is neither A nor B"
         out = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
         return out
-
-
-class SplitLSTMAutoEncoder(nn.Module):
-    def __init__(self, input_size_A, input_size_B, representation_size, num_layers=1, batch_first=True):
-        super(SplitLSTMAutoEncoder, self).__init__()
-        self.batch_first = batch_first
-        self.encoder_A = LSTMEncoder(
-            input_size=input_size_A, representation_size=representation_size, num_layers=num_layers, batch_first=batch_first)
-        self.decoder_A = LSTMDecoder(representation_size=representation_size,
-                                     output_size=input_size_A, num_layers=num_layers, batch_first=batch_first)
-        self.encoder_B = LSTMEncoder(
-            input_size=input_size_B, representation_size=representation_size, num_layers=num_layers, batch_first=batch_first)
-        self.decoder_B = LSTMDecoder(representation_size=representation_size,
-                                     output_size=input_size_B, num_layers=num_layers, batch_first=batch_first)
-
-    def forward(self, x, modality):
-        assert (modality == "A" or modality ==
-                "B"), "Modality is neither A nor B"
-
-        seq_len = x.shape[1] if self.batch_first else x.shape[0]
-        out = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
-        representation = out[:, -1, :].unsqueeze(
-            1) if self.batch_first else out[-1, :, :].unsqueeze(0)
-        representation_seq = representation.expand(-1, seq_len, -1)
-        x_prime_A = self.decoder_A(representation_seq)
-        x_prime_B = self.decoder_B(representation_seq)
-        return (x_prime_A, x_prime_B)
-
-    def encode(self, x, modality):
-        assert (modality == "A" or modality ==
-                "B"), "Modality is neither A nor B"
-        out = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
-        return out
-
 class DCCLSTMAutoEncoder_Embedding(nn.Module):
     def __init__(self, input_size_A, input_size_B, representation_size, num_layers=1, batch_first=True):
         super(DCCLSTMAutoEncoder_Embedding, self).__init__()
@@ -203,7 +199,122 @@ class DCCLSTMAutoEncoder_Embedding(nn.Module):
         out1 = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
         out = F.relu(self.embedding_layerA(out1)) if modality == "A" else F.relu(self.embedding_layerB(out1))
         return out, out1
+class DCCLSTMAutoEncoder2(nn.Module):
+    def __init__(self, input_size_A, input_size_B, representation_size, num_layers=1, batch_first=True):
+        super(DCCLSTMAutoEncoder2, self).__init__()
+        self.batch_first = batch_first
+        self.encoder_A = LSTMEncoder_2(
+            input_size=input_size_A, representation_size=representation_size, num_layers=num_layers, batch_first=batch_first)
+        self.decoder_A = LSTMDecoder_2(representation_size=representation_size,
+                                     output_size=input_size_A, num_layers=num_layers, batch_first=batch_first)
+        self.encoder_B = LSTMEncoder_2(
+            input_size=input_size_B, representation_size=representation_size, num_layers=num_layers, batch_first=batch_first)
+        self.decoder_B = LSTMDecoder_2(representation_size=representation_size,
+                                     output_size=input_size_B, num_layers=num_layers, batch_first=batch_first)
 
+    def forward(self, x_A=None, x_B=None):
+        """Takes the input from two modalities and forwards.
+
+        Args:
+            x_A: input tensor of modality A
+            x_B: input tensor of modality B
+
+        Returns:
+            A tuple containing the rep_A, rep_B, x_prime_A, and x_prime_B
+        """
+        if x_A != None:
+            # Forward in the modality A pipe line
+            seq_len_A = x_A.shape[1]
+            out_A = self.encoder_A(x_A)
+            rep_A = out_A[:, -1,
+                          :].unsqueeze(1) if self.batch_first else out_A[-1, :, :].unsqueeze(0)
+            rep_seq_A = rep_A.expand(-1, seq_len_A, -1)
+            x_prime_A = self.decoder_A(rep_seq_A)
+
+            if x_B == None:
+                return(rep_A.squeeze(), None, x_prime_A, None)
+
+        if x_B != None:
+            # Forward in the modality B pipe line
+            seq_len_B = x_B.shape[1]
+            out_B = self.encoder_B(x_B)
+            rep_B = out_B[:, -1,
+                          :].unsqueeze(1) if self.batch_first else out_B[-1, :, :].unsqueeze(0)
+            rep_seq_B = rep_B.expand(-1, seq_len_B, -1)
+            x_prime_B = self.decoder_B(rep_seq_B)
+            if x_A == None:
+                return(None, rep_B.squeeze(), None, x_prime_B)
+
+        return (rep_A.squeeze(), rep_B.squeeze(), x_prime_A, x_prime_B)
+
+    def encode(self, x, modality):
+        assert (modality == "A" or modality ==
+                "B"), "Modality is neither A nor B"
+        out = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
+        return out
+
+class SplitLSTMAutoEncoder(nn.Module):
+    def __init__(self, input_size_A, input_size_B, representation_size, num_layers=1, batch_first=True):
+        super(SplitLSTMAutoEncoder, self).__init__()
+        self.batch_first = batch_first
+        self.encoder_A = LSTMEncoder(
+            input_size=input_size_A, representation_size=representation_size, num_layers=num_layers, batch_first=batch_first)
+        self.decoder_A = LSTMDecoder(representation_size=representation_size,
+                                     output_size=input_size_A, num_layers=num_layers, batch_first=batch_first)
+        self.encoder_B = LSTMEncoder(
+            input_size=input_size_B, representation_size=representation_size, num_layers=num_layers, batch_first=batch_first)
+        self.decoder_B = LSTMDecoder(representation_size=representation_size,
+                                     output_size=input_size_B, num_layers=num_layers, batch_first=batch_first)
+
+    def forward(self, x, modality):
+        assert (modality == "A" or modality ==
+                "B"), "Modality is neither A nor B"
+
+        seq_len = x.shape[1] if self.batch_first else x.shape[0]
+        out = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
+        representation = out[:, -1, :].unsqueeze(
+            1) if self.batch_first else out[-1, :, :].unsqueeze(0)
+        representation_seq = representation.expand(-1, seq_len, -1)
+        x_prime_A = self.decoder_A(representation_seq)
+        x_prime_B = self.decoder_B(representation_seq)
+        return (x_prime_A, x_prime_B)
+
+    def encode(self, x, modality):
+        assert (modality == "A" or modality ==
+                "B"), "Modality is neither A nor B"
+        out = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
+        return out
+class SplitLSTMAutoEncoder2(nn.Module):
+    def __init__(self, input_size_A, input_size_B, representation_size, num_layers=1, batch_first=True):
+        super(SplitLSTMAutoEncoder2, self).__init__()
+        self.batch_first = batch_first
+        self.encoder_A = LSTMEncoder_2(
+            input_size=input_size_A, representation_size=representation_size, num_layers=num_layers, batch_first=batch_first)
+        self.decoder_A = LSTMDecoder_2(representation_size=representation_size,
+                                     output_size=input_size_A, num_layers=num_layers, batch_first=batch_first)
+        self.encoder_B = LSTMEncoder_2(
+            input_size=input_size_B, representation_size=representation_size, num_layers=num_layers, batch_first=batch_first)
+        self.decoder_B = LSTMDecoder_2(representation_size=representation_size,
+                                     output_size=input_size_B, num_layers=num_layers, batch_first=batch_first)
+
+    def forward(self, x, modality):
+        assert (modality == "A" or modality ==
+                "B"), "Modality is neither A nor B"
+
+        seq_len = x.shape[1] if self.batch_first else x.shape[0]
+        out,_ = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
+        representation = out[:, -1, :].unsqueeze(
+            1) if self.batch_first else out[-1, :, :].unsqueeze(0)
+        representation_seq = representation.expand(-1, seq_len, -1)
+        x_prime_A = self.decoder_A(representation_seq)
+        x_prime_B = self.decoder_B(representation_seq)
+        return (x_prime_A, x_prime_B)
+
+    def encode(self, x, modality):
+        assert (modality == "A" or modality ==
+                "B"), "Modality is neither A nor B"
+        out, out1 = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
+        return out, out1
 
 class SplitLSTMAutoEncoder_Embedding(nn.Module):
     def __init__(self, input_size_A, input_size_B, representation_size, num_layers=1, batch_first=True):
@@ -239,7 +350,13 @@ class SplitLSTMAutoEncoder_Embedding(nn.Module):
                 "B"), "Modality is neither A nor B"
         out1 = self.encoder_A(x) if modality == "A" else self.encoder_B(x)
         out = F.relu(self.embedding_layerA(out1)) if modality == "A" else F.relu(self.embedding_layerB(out1))
+        # return out, out1
         return out, out1
+
+
+
+
+
 
 class MLP(nn.Module):
     def __init__(self, input_size, n_classes, dropout=0.0):

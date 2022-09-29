@@ -1,3 +1,5 @@
+import copy
+
 import torch
 import os
 import torch.multiprocessing as mp
@@ -8,8 +10,8 @@ from FLAlgorithms.users.userbase_dem import User
 from FLAlgorithms.servers.serverbase_dem import Dem_Server
 from Setting import rs_file_path, N_clients
 from utils.data_utils import write_file
-from utils.dem_plot import plot_from_file
-from utils.model_utils import read_data, read_user_data, read_public_data,make_seq_batch,get_seg_len,load_data,client_idxs, split_public
+from utils.dem_plot import plot_from_file,plot_from_file2
+from utils.model_utils import read_data, read_user_data, read_public_data,make_seq_batch,get_seg_len,load_data,client_idxs, split_public,get_seg_len_public
 from torch.utils.data import DataLoader
 import numpy as np
 from FLAlgorithms.optimizers.fedoptimizer import DemProx_SGD
@@ -34,7 +36,7 @@ class MultimodalRep(Dem_Server):
             self.batch_max = 256
         self.train_A = train_A
         self.train_B = train_B
-        self.eval_interval = 2
+        self.eval_interval = 1
         self.loss = nn.CrossEntropyLoss()
 
         # self.optimizer = DemProx_SGD(self.model.parameters(), lr=global_learning_rate, mu=0)
@@ -48,6 +50,7 @@ class MultimodalRep(Dem_Server):
         self.criterion = nn.CrossEntropyLoss().to(self.device)
         self.criterion_KL = KL_Loss(temperature=3.0)
         self.criterion_JSD = JSD()
+        self.cos = nn.CosineSimilarity()
         self.test_modality = test_modality
         self.avg_local_dict_prev_1 = dict()
         self.gamma = gamma
@@ -55,6 +58,7 @@ class MultimodalRep(Dem_Server):
         self.num_clients_A = NUM_CLIENT_A
         self.num_clients_B = NUM_CLIENT_B
         self.num_clients_AB = NUM_CLIENT_AB
+
         # total_users = len(dataset[0][0])
         self.sub_data = cutoff
         if(self.sub_data):
@@ -66,27 +70,31 @@ class MultimodalRep(Dem_Server):
         testing_sample=[]
 
         server_test = load_data(dataset)[1]
-        public_data = load_data(dataset)[2]
-        self.public = public_data
+
+        public = load_data(dataset)[2]
+        # print('public len', len(public["y"]))
+        self.public = public
+        # print('public len', len(self.public["y"]))
         self.data_test = server_test
+
+
         testing_sample = []
         modalities = ["A" for _ in range(self.num_clients_A)] + ["B" for _ in range(
             self.num_clients_B)] + ["AB" for _ in range(self.num_clients_AB)]
         for i in range(self.total_users):
             client_train = load_data(dataset)[0]
-            # public_data = load_data(dataset)[2]
             id = client_idxs(client_train)
+            public_data = load_data(dataset)[2]
 
-            # print("public len",len(public))
             # if(self.sub_data):
             #     if(i in randomList):
             #         train, test = self.get_data(train, test)
-            user = userMultimodalRep(device, id[i], client_train, public_data,  model,  modalities[i], batch_size, learning_rate, beta,
+            user = userMultimodalRep(device, id[i], client_train, public_data, model, model_server , modalities[i], batch_size, learning_rate, beta,
                             local_epochs, optimizer)
-            # self.publicloader = user.publicdatasetloader
             self.users.append(user)
             self.total_train_samples += user.train_samples
-
+        self.seg_len_public = get_seg_len_public(len(self.public["A"]))
+        # print("public len",len(public))
             # print(user.train_samples)
         # print("train sample median :", np.median(training_sample))
         # print("test sample median :", np.median(testing_sample))
@@ -122,7 +130,7 @@ class MultimodalRep(Dem_Server):
 
 
     def global_ae_distill(self, epochs):
-
+        # self.freeze(self.model)
 
         self.model.train()
 
@@ -165,12 +173,15 @@ class MultimodalRep(Dem_Server):
             else:
                 batch_size = 200
 
+            # A_public, B_public, _ = make_seq_batch(
+            #     self.public, [0], len(self.public["A"]), batch_size)
+            # seq_len_public = A_public.shape[1]
             A_public, B_public, _ = make_seq_batch(
-                self.public, [0], len(self.public["A"]), batch_size)
+                self.public, [0], self.seg_len_public, batch_size)
             seq_len_public = A_public.shape[1]
             idx_start_public = 0
             idx_end_public = 0
-
+            # print("public len is ",len(A_public))
             while idx_end_public < seq_len_public:
                 # win_len = np.random.randint(low=16, high=32)
                 win_len = 24
@@ -249,11 +260,14 @@ class MultimodalRep(Dem_Server):
         #     self.gamma += (0.8-0.5)/(NUM_GLOBAL_ITERS-30)
         #     # self.gamma += (0.5 - 0.05) / NUM_GLOBAL_ITERS
 
-
+        Global_Rec_round_loss = []
+        Global_KT_round_loss = []
 
         #Global distillation
         # TODO: implement several global iterations to construct generalized knowledge :done
         for epoch in range(1, epochs+1):
+            Global_Rec_loss = []
+            Global_KT_Loss = []
 
             self.model.train()
 
@@ -265,9 +279,14 @@ class MultimodalRep(Dem_Server):
             else:
                 batch_size = 200
             # print("batch size is", batch_size)
+            # A_public, B_public, _ = make_seq_batch(
+            #     self.public, [0], len(self.public["A"]), batch_size)
+            # seq_len_public = A_public.shape[1]
+
             A_public, B_public, _ = make_seq_batch(
-                self.public, [0], len(self.public["A"]), batch_size)
+                self.public, [0], self.seg_len_public, batch_size)
             seq_len_public = A_public.shape[1]
+
             idx_start_public = 0
             idx_end_public = 0
             a += 1
@@ -286,6 +305,8 @@ class MultimodalRep(Dem_Server):
                 inv_idx_public = torch.arange(seq_B_public.shape[1] - 1, -1, -1).long()
                 self.optimizer_glob_ae.zero_grad()
                 if self.model_ae == "split_LSTM":
+                    Global_ReconstructionLoss = []
+                    Global_Knowledge_Transfer_Loss = []
                     self.freeze(self.model.encoder_B)
                     output_A, output_B = self.model(seq_A_public, "A")
                     repA_public, repA_public1 = self.model.encode(seq_A_public, "A")
@@ -302,15 +323,35 @@ class MultimodalRep(Dem_Server):
                     lossKD1 = self.criterion_KL(repA_public1, repA1_avg_local)
                     norm2loss1 = torch.dist(repA_public1, repA1_avg_local, p=2)
                     lossJSD1 = self.criterion_JSD(repA_public1, repA1_avg_local)
-
+                    lossSim = self.cos(repA_public, repA_avg_local)
+                    lossSim1 = self.cos(repA_public1, repA1_avg_local)
                     lossTrue = loss_A + loss_B
+                    Global_ReconstructionLoss.append(lossTrue.item())
                     if Global_CDKT_metric == "KL":
-                        loss = lossTrue + eta * lossKD + sigma*lossKD1
+                        # loss = lossTrue  + eta * (lossKD + lossKD1)
+                        if One_Layer:
+                            loss = lossTrue + eta*lossKD
+                        else:
+                            loss = lossTrue + eta*lossKD + gamma*lossKD1
+                        # loss = lossTrue + gamma * lossKD1
+                        Global_Knowledge_Transfer_Loss.append(lossKD1.item())
                     elif Global_CDKT_metric == "Norm2":
-                        loss = lossTrue + eta *norm2loss+ sigma*norm2loss1
+                        # loss = lossTrue + eta *(norm2loss+ norm2loss1)
+                        # loss = lossTrue + eta*norm2loss + gamma*norm2loss1
+                        loss = lossTrue + gamma * norm2loss1
+                        Global_Knowledge_Transfer_Loss.append(norm2loss1.item())
                     elif Global_CDKT_metric == "JSD":
                         # print("doing here")
-                        loss = lossTrue + eta * lossJSD + sigma*lossJSD1
+                        # loss = lossTrue + eta*(lossJSD + lossJSD1)
+                        # loss = lossTrue + eta*lossJSD + gamma*lossJSD1
+                        loss = lossTrue + gamma * lossJSD1
+                        Global_Knowledge_Transfer_Loss.append(lossJSD1.item())
+                    elif Global_CDKT_metric == "Cos":
+                        # loss = lossTrue -eta*( lossSim.mean() + lossSim1.mean())
+                        loss = lossTrue +eta*lossSim.mean() + gamma*lossSim1.mean()
+                        # loss = lossTrue - gamma * lossSim1.mean()
+                        Global_Knowledge_Transfer_Loss.append(lossSim1.mean().item())
+
                     loss.backward()
                     self.optimizer_glob_ae.step()
                     if torch.cuda.is_available():
@@ -331,18 +372,50 @@ class MultimodalRep(Dem_Server):
                     lossKD1 = self.criterion_KL(repB_public1, repB1_avg_local)
                     norm2loss1 = torch.dist(repB_public1, repB1_avg_local, p=2)
                     lossJSD1 = self.criterion_JSD(repB_public1, repB1_avg_local)
+                    lossSim = self.cos(repB_public, repB_avg_local)
+                    lossSim1 = self.cos(repB_public1, repB1_avg_local)
                     lossTrue = loss_A + loss_B
+                    Global_ReconstructionLoss.append(lossTrue.item())
+                    # print("loss KL is", lossKD+ lossKD1)
+                    # print("loss true is", lossTrue)
+                    # if Global_CDKT_metric == "KL":
+                    #     loss = lossTrue + eta * (lossKD+ lossKD1)
+                    # elif Global_CDKT_metric == "Norm2":
+                    #     loss = lossTrue + eta * (norm2loss + norm2loss1)
+                    # elif Global_CDKT_metric == "JSD":
+                    #     loss = lossTrue + eta * (lossJSD + lossJSD1)
+                    # elif Global_CDKT_metric == "Cos":
+                    #     loss = lossTrue-eta*( lossSim.mean() + lossSim1.mean())
                     if Global_CDKT_metric == "KL":
-                        loss = lossTrue + gamma * lossKD+ sigma*lossKD1
+                        # loss = lossTrue  + eta * (lossKD + lossKD1)
+                        if One_Layer:
+                            loss = lossTrue + eta*lossKD
+                        else:
+                            loss = lossTrue + eta*lossKD + gamma*lossKD1
+                        # loss = lossTrue + gamma * lossKD1
+                        Global_Knowledge_Transfer_Loss.append(lossKD1.item())
                     elif Global_CDKT_metric == "Norm2":
-                        loss = lossTrue + gamma * norm2loss + sigma*norm2loss1
+                        # loss = lossTrue + eta *(norm2loss+ norm2loss1)
+                        # loss = lossTrue + eta*norm2loss + gamma*norm2loss1
+                        loss = lossTrue  + gamma * norm2loss1
+                        Global_Knowledge_Transfer_Loss.append(norm2loss1.item())
                     elif Global_CDKT_metric == "JSD":
-                        loss = lossTrue + gamma * lossJSD + sigma*lossJSD1
+                        # print("doing here")
+                        # loss = lossTrue + eta*(lossJSD + lossJSD1)
+                        # loss = lossTrue + eta * lossJSD + gamma*lossJSD1
+                        loss = lossTrue+ gamma * lossJSD1
+                        Global_Knowledge_Transfer_Loss.append(lossJSD1.item())
+                    elif Global_CDKT_metric == "Cos":
+                        # loss = lossTrue -eta*( lossSim.mean() + lossSim1.mean())
+                        # loss = lossTrue - eta*lossSim.mean() - gamma*lossSim1.mean()
+                        loss = lossTrue - gamma * lossSim1.mean()
+                        Global_Knowledge_Transfer_Loss.append(lossSim1.mean().item())
+
                     loss.backward()
                     self.optimizer_glob_ae.step()
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()
-                    self.unfreeze(self.model.encoder_B)
+                    self.unfreeze(self.model.encoder_A)
                 elif self.model_ae == "DCCAE_LSTM":
                     rep_A, rep_B, output_A, output_B = self.model(x_A=seq_A_public, x_B=seq_B_public)
                     repA_public, repA_public1 = self.model.encode(seq_A_public, "A")
@@ -363,6 +436,10 @@ class MultimodalRep(Dem_Server):
                     lossKD_B1 = self.criterion_KL(repB_public1, repB1_avg_local)
                     norm2loss_B1 = torch.dist(repB_public1, repB1_avg_local, p=2)
                     lossJSD_B1 = self.criterion_JSD(repB_public1, repB1_avg_local)
+                    lossSim_A = self.cos(repA_public, repA_avg_local)
+                    lossSim1_A1 = self.cos(repA_public1, repA1_avg_local)
+                    lossSim_B = self.cos(repB_public, repB_avg_local)
+                    lossSim1_B1 = self.cos(repB_public1, repB1_avg_local)
                     loss_A = self.criterion_MSE(output_A, seq_A_public[:, inv_idx_public, :])
                     loss_B = self.criterion_MSE(output_B, seq_B_public[:, inv_idx_public, :])
                     loss_dcc = self.criterion_DCC.loss(rep_A, rep_B)
@@ -372,21 +449,26 @@ class MultimodalRep(Dem_Server):
                         loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * norm2loss_A + gamma * norm2loss_B + sigma*(norm2loss_A1+norm2loss_B1)
                     elif Global_CDKT_metric == "JSD":
                         loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * lossJSD_A  + gamma * lossJSD_B + sigma*(lossJSD_A1+ lossJSD_B1)
-
+                    elif Global_CDKT_metric == "Cos":
+                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) - eta *(lossSim_A.mean() + lossSim1_A1.mean()) -gamma*(lossSim_B.mean() + lossSim1_B1.mean())
                     loss.backward()
                     self.optimizer_glob_ae.step()
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()
-
-
+                Global_Rec_loss.extend(Global_ReconstructionLoss)
+                Global_KT_Loss.extend(Global_Knowledge_Transfer_Loss)
+            Global_Rec_round_loss.append(np.mean(Global_Rec_loss))
+            Global_KT_round_loss.append(np.mean(Global_KT_Loss))
+        # self.unfreeze(self.model)
+        return np.mean(Global_Rec_round_loss), np.mean(Global_KT_round_loss)
 
     def global_update(self, epochs):
         # print("model param is",self.model.state_dict())
-        self.freeze(self.model)
+        # self.freeze(self.model)
         self.model.eval()
         self.model_server.train()
         # print("model server weight update is",self.model.state_dict())
-
+        # print("server train A len is ", len(self.train_A["A"]))
         round_accuracy = []
         for epoch in range(1, epochs + 1):
             epoch_accuracy = []
@@ -396,6 +478,10 @@ class MultimodalRep(Dem_Server):
                 self.train_A, [0], len(self.train_A["A"]), batch_size)
             _, x_B_train, y_B_train = make_seq_batch(
                 self.train_B, [0], len(self.train_B["B"]), batch_size)
+            # x_A_train, _, y_A_train = make_seq_batch(
+            #     self.public, [0], len(self.public["A"]), batch_size)
+            # _, x_B_train, y_B_train = make_seq_batch(
+            #     self.public, [0], len(self.public["B"]), batch_size)
             if "A" in label_modality:
                 seq_len = x_A_train.shape[1]
                 idx_start = 0
@@ -458,8 +544,77 @@ class MultimodalRep(Dem_Server):
             round_accuracy.append(np.mean(epoch_accuracy))
 
         print("Training accuracy is ", np.mean(round_accuracy))
-        self.unfreeze(self.model)
-    def evaluating_classifier(self, glob_iter):
+        # self.unfreeze(self.model)
+    def evaluate_local_encoder(self, user):
+        user.model.eval()
+        if Global_Classifier:
+            self.model_server.eval()
+        else:
+            user.model_server.eval()
+        if self.test_modality == "A":
+            x_samples = np.expand_dims(self.data_test["A"], axis=0)
+        elif self.test_modality == "B":
+            x_samples = np.expand_dims(self.data_test["B"], axis=0)
+        y_samples = np.expand_dims(self.data_test["y"], axis=0)
+        win_loss = []
+        win_accuracy = []
+        win_f1 = []
+        correct_pred=[]
+        num_samples=[]
+        n_samples = x_samples.shape[1]
+        n_eval_process = n_samples // EVAL_WIN + 1
+
+        for i in range(n_eval_process):
+            idx_start = i * EVAL_WIN
+            idx_end = np.min((n_samples, idx_start + EVAL_WIN))
+            x = x_samples[:, idx_start:idx_end, :]
+            y = y_samples[:, idx_start:idx_end]
+
+            inputs = torch.from_numpy(x).double().to(self.device)
+            targets = torch.from_numpy(y.flatten()).to(self.device)
+            rpts, _ = user.model.encode(inputs, self.test_modality)
+            if Global_Classifier:
+                output = self.model_server(rpts)
+            else:
+                output = user.model_server(rpts)
+
+            loss = self.criterion(output, targets.long())
+            top_p, top_class = output.topk(1, dim=1)
+            equals = top_class == targets.view(*top_class.shape).long()
+            accuracy = torch.mean(equals.type(torch.FloatTensor))
+            np_gt = y.flatten()
+            np_pred = top_class.squeeze().cpu().detach().numpy()
+            weighted_f1 = f1_score(np_gt, np_pred, average="weighted")
+
+            win_loss.append(loss.item())
+            win_accuracy.append(accuracy)
+            win_f1.append(weighted_f1)
+            correct_pred.append(np_pred)
+            num_samples.append(np_gt)
+
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        return np.mean(win_f1)
+
+    def client_encoder_test(self):
+        local_f1_accuracy = []
+
+        for user in self.selected_users:
+            local_f1 = self.evaluate_local_encoder(user)
+            local_f1_accuracy.append(local_f1)
+
+
+        self.rs_local_f1_acc.append(local_f1_accuracy)
+        return np.mean(local_f1_accuracy)
+
+    def evaluating_encoder_clients(self):
+        avg_test_accuracy= self.client_encoder_test()
+
+        print("Avg clients F1 score is", avg_test_accuracy)
+        return avg_test_accuracy
+
+    def evaluating_classifier(self, epochs):
         # print("model param is", self.model_server.state_dict())
         self.model.eval()
         self.model_server.eval()
@@ -502,18 +657,25 @@ class MultimodalRep(Dem_Server):
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
+        print("loss is", np.mean(win_loss))
         print("F1 accuracy is",np.mean(win_f1))
         print("Test accuracy is",np.mean(win_accuracy))
 
+        # print("representation", rpts)
+        # print("Test accuracy is",np.mean(win_accuracy))
+        self.rs_glob_acc.append(np.mean(win_f1))
+        self.rs_test_loss.append(np.mean(win_loss))
+        return np.mean(win_f1)
     def train(self):
-        for glob_iter in range(self.num_glob_iters):
 
-            self.selected_users = self.select_users(glob_iter,self.num_users)
+        for glob_iter in range(self.num_glob_iters):
+            print("-------------Round number: ", glob_iter, " -------------")
+            self.selected_users = self.select_users(self.num_glob_iters,self.num_users)
             # self.selected_users = self.users
             #
             if(self.experiment):
                 self.experiment.set_epoch( glob_iter + 1)
-            print("-------------Round number: ",glob_iter, " -------------")
+
             #
             # # ============= Test each client =============
             # tqdm.write('============= Test Client Models - Specialization ============= ')
@@ -528,18 +690,33 @@ class MultimodalRep(Dem_Server):
             #loss_ = 0
             # self.send_parameters()   #Broadcast the global model to all clients
 
-
+            reconstruction_loss= []
+            knowledge_transfer_loss = []
+            local_f1_accuracy=[]
             #NOTE: this is required for the ``fork`` method to work
+            #Update local autoencoder
             for user in self.selected_users:
 
                     # user.train(self.local_epochs)
+                    pre_w = copy.deepcopy(user.model)
+                    rec, kt=user.train_ae_distill(self.local_epochs,self.model,pre_w)
+                    reconstruction_loss.append(rec)
+                    knowledge_transfer_loss.append(kt)
 
-                    user.train_ae_distill(self.local_epochs,self.model)
+            self.rs_rec_loss.append(reconstruction_loss)
+            self.rs_kt_loss.append(knowledge_transfer_loss)
 
-                    # user.train_prox(self.local_epochs)
+            #Update local classifier
 
-            #
-            self.global_ae_distill(global_ae_distill_epoch)
+
+
+
+
+            Global_rec,Global_kt=self.global_ae_distill(global_ae_distill_epoch)
+            self.rs_global_rec_loss.append(Global_rec)
+            self.rs_global_kt_loss.append(Global_kt)
+
+
 
             self.global_update(global_generalized_epochs)
             # Classifier evaluation
@@ -547,7 +724,21 @@ class MultimodalRep(Dem_Server):
                 continue
             else:
                 with torch.no_grad():
-                    self.evaluating_classifier(glob_iter)  # evaluate global classifier
+                    self.evaluating_classifier(global_generalized_epochs)
+
+            if Global_Classifier==False:
+                for user in self.selected_users:
+                    user.local_classifier_fine_tune(local_classifier_epochs,self.train_A,self.train_B)
+
+            client_avg_acc=self.evaluating_encoder_clients()
+            self.c_avg_test.append(client_avg_acc)
+
+            # for user in self.selected_users:
+            #     local_f1 = self.evaluate_local_encoder(user)
+            #     local_f1_accuracy.append(local_f1)
+            # self.rs_local_f1_acc.append(local_f1_accuracy)
+                # print("local f1 is", local_f1)
+        # evaluate global classifier
 
 
 
@@ -555,7 +746,7 @@ class MultimodalRep(Dem_Server):
 
         # self.save_results1()
         # self.save_model()
-
+        self.save_results2()
     def save_results1(self):
         write_file(file_name=rs_file_path, root_test=self.rs_glob_acc, root_train=self.rs_train_acc,
                    cs_avg_data_test=self.cs_avg_data_test, cs_avg_data_train=self.cs_avg_data_train,
@@ -563,3 +754,8 @@ class MultimodalRep(Dem_Server):
                    cs_data_test=self.cs_data_test, cs_data_train=self.cs_data_train, cg_data_test=self.cg_data_test,
                    cg_data_train=self.cg_data_train, N_clients=[N_clients])
         plot_from_file()
+    def save_results2(self):
+        write_file(file_name=rs_file_path, root_test=self.rs_glob_acc, loss=self.rs_test_loss, rec_loss=self.rs_rec_loss, kt_loss=self.rs_kt_loss,
+                   global_rec_loss=self.rs_global_rec_loss,global_kt_loss=self.rs_global_kt_loss,local_f1_acc=self.rs_local_f1_acc,avg_local_f1_acc=self.c_avg_test,
+                   N_clients=[N_clients])
+        plot_from_file2()

@@ -31,6 +31,13 @@ class Server:
         self.algorithm = algorithm
         self.rs_train_acc, self.rs_train_loss, self.rs_glob_acc,self.rs_train_acc_per, self.rs_train_loss_per, self.rs_glob_acc_per , self.rs_avg_acc, self.rs_avg_acc_per = [], [], [], [], [], [], [], []
         self.rs_c_gen_acc=[]
+        self.rs_test_loss=[]
+        self.rs_rec_loss = []
+        self.rs_kt_loss = []
+        self.rs_global_rec_loss = []
+        self.rs_global_kt_loss = []
+        self.rs_local_f1_acc=[]
+        self.c_avg_test=[]
         self.times = times
         self.experiment = experiment
         self.sub_data = 0
@@ -105,13 +112,13 @@ class Server:
             self.add_parameters(user, user.train_samples / total_train)
 
     def add_parameters_A(self, user, ratio):
-        model = self.model
+        model = self.model.parameters()
         for server_key in self.model.state_dict().keys():
             if "A" in server_key :
                 self.model.state_dict()[server_key] += user.model.state_dict()[server_key] * ratio
 
     def add_parameters_B(self, user, ratio):
-        model = self.model
+        model = self.model.parameters()
         for server_key in self.model.state_dict().keys():
             if "B" in server_key :
                 self.model.state_dict()[server_key] +=  user.model.state_dict()[server_key] * ratio
@@ -142,7 +149,7 @@ class Server:
                 self.add_parameters_B(user, user.get_weight()/ n_B)
 
         # print(self.model.state_dict())
-        print("finish aggregation")
+        # print("finish aggregation")
     def aggregate_meta_parameters(self):
         assert (self.users is not None and len(self.users) > 0)
         for param in self.model.parameters():
@@ -185,7 +192,7 @@ class Server:
         num_users = int(fac_users * len(self.users))
         num_users = min(num_users, len(self.users))
         if fac_users<1.0:
-          np.random.seed(round)
+          np.random.seed(100)
         return np.random.choice(self.users, num_users, replace=False) #, p=pk)
 
     def select_clients(self, clients):

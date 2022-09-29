@@ -117,8 +117,8 @@ def gen_opp(data_path):
     #create public data for opp
     runs_public = []
     idxs_public = []
-    for r in [1, 2]:
-        for s in [2, 3]:
+    for r in [4, 5]:
+        for s in [1, 4]:
             runs_public.append(np.loadtxt(os.path.join(
                 data_path, "opp", f"S{s}-ADL{r}.dat")))
             idxs_public.append((r, s))

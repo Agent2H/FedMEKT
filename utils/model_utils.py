@@ -29,7 +29,7 @@ N_DIV_URFALL = 10
 N_LABEL_DIV_OPP = 15
 N_LABEL_DIV_MHEALTH = 9
 N_LABEL_DIV_URFALL = 9
-
+NUM_LABELS = 0
 def suffer_data(data):
     data_x = data['x']
     data_y = data['y']
@@ -170,7 +170,7 @@ def read_cifa_data():
             num_samples = int(props[l, user//int(NUM_USERS/10), j])
             numran1 = random.randint(300, 600)
             num_samples = (num_samples)  + numran1 #+ 200
-            if(NUM_USERS <= 20): 
+            if(NUM_USERS <= 20):
                 num_samples = num_samples * 2
             if idx[l] + num_samples < len(cifa_data[l]):
                 X[user] += cifa_data[l][idx[l]:idx[l]+num_samples].tolist()
@@ -198,16 +198,16 @@ def read_cifa_data():
         test_len = num_samples - train_len
 
         #X_train, X_test, y_train, y_test = train_test_split(X[i], y[i], train_size=0.75, stratify=y[i])\
-        
+
         test_data['users'].append(uname)
-        test_data["user_data"][uname] =  {'x': X[i][:test_len], 'y': y[i][:test_len]} 
+        test_data["user_data"][uname] =  {'x': X[i][:test_len], 'y': y[i][:test_len]}
         test_data['num_samples'].append(test_len)
 
         train_data["user_data"][uname] =  {'x': X[i][test_len:], 'y': y[i][test_len:]}
         train_data['users'].append(uname)
         train_data['num_samples'].append(train_len)
-        
-        
+
+
     # random.seed(1)
     # np.random.seed(1)
     # NUM_USERS = 1 # should be muitiple of 10
@@ -229,7 +229,7 @@ def read_cifa_data():
     # # for i in trange(5, ncols=120):
     # for i in range(NUM_USERS):
     #     uname = 'f_{0:05d}'.format(i)
-    #     train_data['users'].append(uname) 
+    #     train_data['users'].append(uname)
     #     train_data['user_data'][uname] = {'x': cifa_data_image.tolist(), 'y': cifa_data_label.tolist()}
     #     train_data['num_samples'].append(len(cifa_data_image))
 
@@ -245,10 +245,10 @@ def read_cifa_data():
 
     # # Create data structure
     # test_data = {'users': [], 'user_data':{}, 'num_samples':[]}
-    
+
     # for i in range(NUM_USERS):
     #     num_samples = len(cifa_data_image_test)
-    #     test_data['users'].append(uname) 
+    #     test_data['users'].append(uname)
     #     test_data['user_data'][uname] = {'x': cifa_data_image_test.tolist(), 'y': cifa_data_label_test.tolist()}
     #     test_data['num_samples'].append(num_samples)
 
@@ -258,7 +258,7 @@ def read_data(dataset):
     '''parses data in given train and test data directories
 
     assumes:
-    - the data in the input directories are .json files with 
+    - the data in the input directories are .json files with
         keys 'users' and 'user_data'
     - the set of train set users is the same as the set of test set users
 
@@ -363,7 +363,7 @@ def read_user_data(index,data,dataset):
         y_test = torch.Tensor(y_test).type(torch.int64)
         X_public = torch.Tensor(X_public).type(torch.float32)
         y_public = torch.Tensor(y_public).type(torch.int64)
-    
+
     train_data = [(x, y) for x, y in zip(X_train, y_train)]
     test_data = [(x, y) for x, y in zip(X_test, y_test)]
     public_data = [(x, y) for x, y in zip(X_public, y_public)]
@@ -407,6 +407,7 @@ def load_data(data):
         s_test = np.random.randint(1, 11)
         # Create public data
         s_public = np.random.choice([i for i in range(1, 11) if i not in [s_test]])
+
         # print("s_test",s_test)
         # print("s_public",s_public)
         data_train = {"A": [], "B": [], "y": []}
@@ -508,6 +509,7 @@ def load_data(data):
         data_public["B"] = np.concatenate(data_public["B"])
         data_public["y"] = np.squeeze(np.concatenate(data_public["y"]))
         return (data_train,  data_test, data_public)
+        # return (data_train, data_test,data_public)
 
 def split_server_train(data_train):
     """Extracts training data for the server.
@@ -565,7 +567,7 @@ def split_public(data_public):
     Returns:
     A dictionary containing the server training data.
     """
-    public_ratio = 0.11
+    public_ratio = PUBLIC_RATIO
     x_public_A = data_public["A"]
     x_public_B = data_public["B"]
     y_public = data_public["y"]
@@ -651,6 +653,15 @@ def get_seg_len(n_samples):
     elif DATASET == "ur_fall":
         n_div = N_DIV_URFALL
     return int(n_samples * float(train_ratio)//n_div)
+
+def get_seg_len_public(n_samples):
+    if DATASET== "opp":
+        n_div = N_DIV_OPP
+    elif DATASET == "mhealth":
+        n_div = N_DIV_MHEALTH
+    elif DATASET == "ur_fall":
+        n_div = N_DIV_URFALL
+    return int(n_samples * float(PUBLIC_RATIO))
 
 def client_idxs(data_train):
     """Generates sample indices for each client.

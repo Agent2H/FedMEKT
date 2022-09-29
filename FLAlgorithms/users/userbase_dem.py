@@ -14,11 +14,12 @@ class User(Node):
     """
     Base class for users in federated learning.
     """
-    def __init__(self, device, id, train_data, public_data,  model, client_model, batch_size = 0, learning_rate = 0, beta = 0 , L_k = 0, local_epochs = 0, group = None):
+    def __init__(self, device, id, train_data, public_data,  model, model_server, client_model, batch_size = 0, learning_rate = 0, beta = 0 , L_k = 0, local_epochs = 0, group = None):
         # from fedprox
 
         self.device = device
         self.model = copy.deepcopy(model)
+        self.model_server = copy.deepcopy(model_server)
         self.client_model = copy.deepcopy(client_model)
         self.id = id  # integer
         self.train_samples = len(train_data)
