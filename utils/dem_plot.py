@@ -226,7 +226,7 @@ def plot_from_file2():
     plt.title("Training Client Reconstruction Loss")
     plt.savefig(PLOT_PATH + alg_name + "C_Rec_Loss_Training.pdf")
     #
-    if RUNNING_ALG=="mmFedEKT":
+    if RUNNING_ALG=="FedMEKT":
         plt.figure(9)
         plt.clf()
         plt.plot(f_data['kt_loss'])

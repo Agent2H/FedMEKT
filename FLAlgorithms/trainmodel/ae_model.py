@@ -8,6 +8,7 @@ from torchvision.models import resnet18
 from torchvision import transforms
 from PIL import Image
 from Setting import *
+from Setting import rep_size
 
 class LSTMEncoder(nn.Module):
     def __init__(self, input_size, representation_size, num_layers=1, batch_first=True):
@@ -370,7 +371,27 @@ class MLP(nn.Module):
         out = out.contiguous().view(-1, self.n_classes)
         return F.log_softmax(out, dim=1)
 
+class Dense(nn.Module):
+    def __init__(self, embedding_size):
+        super(Dense, self).__init__()
+        # self.n_classes = n_classes
 
+        self.fc = nn.Linear(embedding_size, embedding_size)
+
+    def forward(self, x):
+        out = self.fc(x)
+        return out
+
+class Dense1(nn.Module):
+    def __init__(self, embedding_size1):
+        super(Dense1, self).__init__()
+        # self.n_classes = n_classes
+
+        self.fc = nn.Linear(embedding_size1, embedding_size1)
+
+    def forward(self, x):
+        out = self.fc(x)
+        return out
 
 
 class ResNetMapper(nn.Module):

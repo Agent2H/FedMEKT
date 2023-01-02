@@ -5,7 +5,7 @@ import os
 import torch.multiprocessing as mp
 from tqdm import tqdm
 import torch.nn as nn
-from FLAlgorithms.users.userFedMEKT import userMultimodalRep
+from FLAlgorithms.users.userFedMEKT1 import userMultimodalRepFusion
 from FLAlgorithms.users.userbase_dem import User
 from FLAlgorithms.servers.serverbase_dem import Dem_Server
 from Setting import rs_file_path, N_clients
@@ -21,8 +21,8 @@ from utils.train_utils import KL_Loss, JSD, DCCLoss
 from Setting import *
 from torch import nn, optim
 from sklearn.metrics import f1_score
-class MultimodalRep(Dem_Server):
-    def __init__(self, train_A, train_B,experiment, device, dataset, algorithm, model,  model_server, embedding_layer,embedding_layer1,batch_size,
+class MultimodalRepFusion(Dem_Server):
+    def __init__(self, train_A, train_B,experiment, device, dataset, algorithm, model,  model_server,embedding_layer,embedding_layer1, batch_size,
                  learning_rate, num_glob_iters, local_epochs, optimizer, num_users, times , cutoff,args):
         super().__init__(train_A, train_B,experiment, device, dataset, algorithm, model[0],  model_server[0],embedding_layer[0],embedding_layer1[0],batch_size,
                          learning_rate, num_glob_iters,local_epochs, optimizer, num_users, times,args)
@@ -89,7 +89,7 @@ class MultimodalRep(Dem_Server):
             # if(self.sub_data):
             #     if(i in randomList):
             #         train, test = self.get_data(train, test)
-            user = userMultimodalRep(device, id[i], client_train, public_data, model, model_server , embedding_layer,embedding_layer1,modalities[i], batch_size, learning_rate, beta,
+            user = userMultimodalRepFusion(device, id[i], client_train, public_data, model, model_server , embedding_layer,embedding_layer1,modalities[i], batch_size, learning_rate, beta,
                             local_epochs, optimizer)
             self.users.append(user)
             self.total_train_samples += user.train_samples
@@ -192,7 +192,7 @@ class MultimodalRep(Dem_Server):
                 x_A_public = A_public[:, idx_start_public:idx_end_public, :]
                 seq_A_public = torch.from_numpy(x_A_public).double().to(self.device)
                 repA_public, repA_public1 = user.model.encode(seq_A_public, "A")
-                # repA_public = user.model.encode(seq_A_public, "A")
+                # repA_public= user.model.encode(seq_A_public, "A")
                 repA_public = repA_public.cpu().detach().numpy()
                 repA_public1 = repA_public1.cpu().detach().numpy()
                 repA_local[idx_end_public]= repA_public
@@ -202,7 +202,7 @@ class MultimodalRep(Dem_Server):
                 x_B_public = B_public[:, idx_start_public:idx_end_public, :]
                 seq_B_public = torch.from_numpy(x_B_public).double().to(self.device)
                 repB_public, repB_public1 = user.model.encode(seq_B_public, "B")
-                # repB_public= user.model.encode(seq_B_public, "B")
+                # repB_public = user.model.encode(seq_B_public, "B")
                 repB_public = repB_public.cpu().detach().numpy()
                 repB_public1 = repB_public1.cpu().detach().numpy()
                 repB_local[idx_end_public] = repB_public
@@ -293,187 +293,140 @@ class MultimodalRep(Dem_Server):
             idx_end_public = 0
             a += 1
             while idx_end_public < seq_len_public:
-                win_len = 24
-                # win_len = np.random.randint(low=16, high=32)
-                idx_start_public = idx_end_public
-                idx_end_public += win_len
-                idx_end_public = min(idx_end_public, seq_len_public)
+                    win_len = 24
+                    # win_len = np.random.randint(low=16, high=32)
+                    idx_start_public = idx_end_public
+                    idx_end_public += win_len
+                    idx_end_public = min(idx_end_public, seq_len_public)
 
-                x_A_public = A_public[:, idx_start_public:idx_end_public, :]
-                seq_A_public = torch.from_numpy(x_A_public).double().to(self.device)
-                inv_idx_public = torch.arange(seq_A_public.shape[1] - 1, -1, -1).long()
-                x_B_public = B_public[:, idx_start_public:idx_end_public, :]
-                seq_B_public = torch.from_numpy(x_B_public).double().to(self.device)
-                inv_idx_public = torch.arange(seq_B_public.shape[1] - 1, -1, -1).long()
-                self.optimizer_glob_ae.zero_grad()
-                if self.model_ae == "split_LSTM":
+                    x_A_public = A_public[:, idx_start_public:idx_end_public, :]
+                    seq_A_public = torch.from_numpy(x_A_public).double().to(self.device)
+                    inv_idx_public = torch.arange(seq_A_public.shape[1] - 1, -1, -1).long()
+                    x_B_public = B_public[:, idx_start_public:idx_end_public, :]
+                    seq_B_public = torch.from_numpy(x_B_public).double().to(self.device)
+                    inv_idx_public = torch.arange(seq_B_public.shape[1] - 1, -1, -1).long()
+                    self.optimizer_glob_ae.zero_grad()
+                    repA_avg_local = torch.from_numpy(repA_avg[idx_end_public]).double().to(self.device)
+                    repA1_avg_local = torch.from_numpy(repA1_avg[idx_end_public]).double().to(self.device)
+                    repB_avg_local = torch.from_numpy(repB_avg[idx_end_public]).double().to(self.device)
+                    repB1_avg_local = torch.from_numpy(repB1_avg[idx_end_public]).double().to(self.device)
 
                     Global_ReconstructionLoss = []
                     Global_Knowledge_Transfer_Loss = []
-                    self.freeze(self.model.encoder_B)
-                    output_A, output_B = self.model(seq_A_public, "A")
+                    # self.freeze(self.model.encoder_B)
                     repA_public, repA_public1 = self.model.encode(seq_A_public, "A")
+                    repB_public, repB_public1 = self.model.encode(seq_B_public, "B")
                     # repA_public= self.model.encode(seq_A_public, "A")
-                    # print("size of rep is ", repA_public.shape)
-                    repA_avg_local = torch.from_numpy(repA_avg[idx_end_public]).double().to(self.device)
+                    # repB_public= self.model.encode(seq_B_public, "B")
+                    embedding_knowledge_local = torch.cat([repA_avg_local, repB_avg_local], dim=0)
+                    embedding_knowledge_local=self.embedding_layer(embedding_knowledge_local)
+                    embedding_knowledge_local1 = torch.cat([repA1_avg_local, repB1_avg_local], dim=0)
+                    embedding_knowledge_local1 = self.embedding_layer1(embedding_knowledge_local1)
+                    embedding_knowledge_global = torch.cat([repA_public, repB_public], dim=0)
+                    embedding_knowledge_global = self.embedding_layer(embedding_knowledge_global)
+                    embedding_knowledge_global1 = torch.cat([repA_public1, repB_public1], dim=0)
+                    embedding_knowledge_global1 = self.embedding_layer1(embedding_knowledge_global1)
+                    output_A, output_B = self.model(seq_A_public, "A")
 
-                    repA1_avg_local = torch.from_numpy(repA1_avg[idx_end_public]).double().to(self.device)
-                    embedding_knowledge_local = self.embedding_layer(repA_avg_local)
-                    embedding_knowledge_global = self.embedding_layer(repA_public)
+                    # print("size of rep is ", repA_public.shape)
+
                     # print("global size",repA_public.size())
                     # print("local size", repA_avg_local.size())
                     loss_A = self.criterion_MSE(output_A, seq_A_public[:, inv_idx_public, :])
                     loss_B = self.criterion_MSE(output_B, seq_B_public[:, inv_idx_public, :])
-                    lossKD = self.criterion_KL(repA_public, repA_avg_local)
-                    # lossKD = self.criterion_KL(embedding_knowledge_local, embedding_knowledge_global)
-
+                    lossKD = self.criterion_KL(embedding_knowledge_local,embedding_knowledge_global)
                     norm2loss = torch.dist(repA_public, repA_avg_local, p=2)
                     lossJSD = self.criterion_JSD(repA_public, repA_avg_local)
-                    lossKD1 = self.criterion_KL(repA_public1, repA1_avg_local)
+                    lossKD1 = self.criterion_KL(embedding_knowledge_local1,embedding_knowledge_global1)
                     # norm2loss1 = torch.dist(repA_public1, repA1_avg_local, p=2)
                     # lossJSD1 = self.criterion_JSD(repA_public1, repA1_avg_local)
                     lossSim = self.cos(repA_public, repA_avg_local)
                     # lossSim1 = self.cos(repA_public1, repA1_avg_local)
+                    lossTrue_A = loss_A + loss_B
 
-                    lossTrue = loss_A + loss_B
-                    Global_ReconstructionLoss.append(lossTrue.item())
                     if Global_CDKT_metric == "KL":
                         # loss = lossTrue  + eta * (lossKD + lossKD1)
                         if One_Layer:
-                            loss = lossTrue + eta*lossKD
+                            lossA = lossTrue_A + eta*lossKD
                         else:
-                            loss = lossTrue + eta*lossKD + gamma*lossKD1
+                            lossA = lossTrue_A + eta*lossKD + gamma*lossKD1
                         # loss = lossTrue + gamma * lossKD1
-                        # Global_Knowledge_Transfer_Loss.append(lossKD1.item())
+                        # Global_Knowledge_Transfer_Loss.append((lossKD1+lossKD).item())
                         Global_Knowledge_Transfer_Loss.append(lossKD.item())
                     elif Global_CDKT_metric == "Norm2":
                         # loss = lossTrue + eta *(norm2loss+ norm2loss1)
                         # loss = lossTrue + eta*norm2loss + gamma*norm2loss1
-                        loss = lossTrue + gamma * norm2loss1
+                        loss = lossTrue_A + gamma * norm2loss1
                         Global_Knowledge_Transfer_Loss.append(norm2loss1.item())
                     elif Global_CDKT_metric == "JSD":
                         # print("doing here")
                         # loss = lossTrue + eta*(lossJSD + lossJSD1)
                         # loss = lossTrue + eta*lossJSD + gamma*lossJSD1
-                        loss = lossTrue + gamma * lossJSD1
+                        loss = lossTrue_A + gamma * lossJSD1
                         Global_Knowledge_Transfer_Loss.append(lossJSD1.item())
                     elif Global_CDKT_metric == "Cos":
                         # loss = lossTrue -eta*( lossSim.mean() + lossSim1.mean())
-                        loss = lossTrue +eta*lossSim.mean() + gamma*lossSim1.mean()
+                        loss = lossTrue_A +eta*lossSim.mean() + gamma*lossSim1.mean()
                         # loss = lossTrue - gamma * lossSim1.mean()
                         Global_Knowledge_Transfer_Loss.append(lossSim1.mean().item())
 
-                    loss.backward()
-                    self.optimizer_glob_ae.step()
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                    self.unfreeze(self.model.encoder_B)
+
+
+
+                    # self.unfreeze(self.model.encoder_B)
 
                     # Train with input of modality B and output of modalities A&B
-                    self.freeze(self.model.encoder_A)
+                    # self.freeze(self.model.encoder_A)
                     output_A, output_B = self.model(seq_B_public, "B")
-                    repB_public, repB_public1 = self.model.encode(seq_B_public, "B")
-                    # repB_public= self.model.encode(seq_B_public, "B")
-                    repB_avg_local = torch.from_numpy(repB_avg[idx_end_public]).double().to(self.device)
-
-                    repB1_avg_local = torch.from_numpy(repB1_avg[idx_end_public]).double().to(self.device)
-                    embedding_knowledge_local = self.embedding_layer(repB_avg_local)
-                    embedding_knowledge_global = self.embedding_layer(repB_public)
                     loss_A = self.criterion_MSE(output_A, seq_A_public[:, inv_idx_public, :])
                     loss_B = self.criterion_MSE(output_B, seq_B_public[:, inv_idx_public, :])
-                    lossKD = self.criterion_KL(repB_public, repB_avg_local)
-                    # lossKD = self.criterion_KL(embedding_knowledge_local, embedding_knowledge_global)
+                    lossKD = self.criterion_KL(embedding_knowledge_local,embedding_knowledge_global)
                     norm2loss = torch.dist(repB_public, repB_avg_local, p=2)
                     lossJSD = self.criterion_JSD(repB_public, repB_avg_local)
-                    lossKD1 = self.criterion_KL(repB_public1, repB1_avg_local)
+                    lossKD1 = self.criterion_KL(embedding_knowledge_local1,embedding_knowledge_global1)
                     # norm2loss1 = torch.dist(repB_public1, repB1_avg_local, p=2)
                     # lossJSD1 = self.criterion_JSD(repB_public1, repB1_avg_local)
                     lossSim = self.cos(repB_public, repB_avg_local)
                     # lossSim1 = self.cos(repB_public1, repB1_avg_local)
-                    lossTrue = loss_A + loss_B
-                    Global_ReconstructionLoss.append(lossTrue.item())
-                    # print("loss KL is", lossKD+ lossKD1)
-                    # print("loss true is", lossTrue)
-                    # if Global_CDKT_metric == "KL":
-                    #     loss = lossTrue + eta * (lossKD+ lossKD1)
-                    # elif Global_CDKT_metric == "Norm2":
-                    #     loss = lossTrue + eta * (norm2loss + norm2loss1)
-                    # elif Global_CDKT_metric == "JSD":
-                    #     loss = lossTrue + eta * (lossJSD + lossJSD1)
-                    # elif Global_CDKT_metric == "Cos":
-                    #     loss = lossTrue-eta*( lossSim.mean() + lossSim1.mean())
+                    lossTrue_B = loss_A + loss_B
+                    Global_ReconstructionLoss.append((lossTrue_A+lossTrue_B).item())
+
                     if Global_CDKT_metric == "KL":
                         # loss = lossTrue  + eta * (lossKD + lossKD1)
                         if One_Layer:
-                            loss = lossTrue + eta*lossKD
+                            lossB = lossTrue_B + eta*lossKD
                         else:
-                            loss = lossTrue + eta*lossKD + gamma*lossKD1
+                            lossB = lossTrue_B + eta*lossKD + gamma*lossKD1
                         # loss = lossTrue + gamma * lossKD1
-                        # Global_Knowledge_Transfer_Loss.append(lossKD1.item())
-                        Global_Knowledge_Transfer_Loss.append(lossKD.item())
+                        # Global_Knowledge_Transfer_Loss.append((lossKD1+lossKD).item())
+                        Global_Knowledge_Transfer_Loss.append( lossKD.item())
                     elif Global_CDKT_metric == "Norm2":
                         # loss = lossTrue + eta *(norm2loss+ norm2loss1)
                         # loss = lossTrue + eta*norm2loss + gamma*norm2loss1
-                        loss = lossTrue  + gamma * norm2loss1
+                        loss = lossTrue_B  + gamma * norm2loss1
                         Global_Knowledge_Transfer_Loss.append(norm2loss1.item())
                     elif Global_CDKT_metric == "JSD":
                         # print("doing here")
                         # loss = lossTrue + eta*(lossJSD + lossJSD1)
                         # loss = lossTrue + eta * lossJSD + gamma*lossJSD1
-                        loss = lossTrue+ gamma * lossJSD1
+                        loss = lossTrue_B+ gamma * lossJSD1
                         Global_Knowledge_Transfer_Loss.append(lossJSD1.item())
                     elif Global_CDKT_metric == "Cos":
                         # loss = lossTrue -eta*( lossSim.mean() + lossSim1.mean())
                         # loss = lossTrue - eta*lossSim.mean() - gamma*lossSim1.mean()
-                        loss = lossTrue - gamma * lossSim1.mean()
+                        loss = lossTrue_B - gamma * lossSim1.mean()
                         Global_Knowledge_Transfer_Loss.append(lossSim1.mean().item())
 
+                    loss = lossA+lossB
+                    # loss = lossTrue_A + lossTrue_B + eta*lossKD + gamma*lossKD1
                     loss.backward()
                     self.optimizer_glob_ae.step()
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()
-                    self.unfreeze(self.model.encoder_A)
-                elif self.model_ae == "DCCAE_LSTM":
-                    rep_A, rep_B, output_A, output_B = self.model(x_A=seq_A_public, x_B=seq_B_public)
-                    repA_public, repA_public1 = self.model.encode(seq_A_public, "A")
-                    repA_avg_local = torch.from_numpy(repA_avg[idx_end_public]).double().to(self.device)
-                    repA1_avg_local = torch.from_numpy(repA1_avg[idx_end_public]).double().to(self.device)
-                    repB_public, repB_public1 = self.model.encode(seq_B_public, "B")
-                    repB_avg_local = torch.from_numpy(repB_avg[idx_end_public]).double().to(self.device)
-                    repB1_avg_local = torch.from_numpy(repB1_avg[idx_end_public]).double().to(self.device)
-                    lossKD_A = self.criterion_KL(repA_public, repA_avg_local)
-                    norm2loss_A = torch.dist(repA_public, repA_avg_local, p=2)
-                    lossJSD_A = self.criterion_JSD(repA_public, repA_avg_local)
-                    lossKD_B = self.criterion_KL(repB_public, repB_avg_local)
-                    norm2loss_B = torch.dist(repB_public, repB_avg_local, p=2)
-                    lossJSD_B = self.criterion_JSD(repB_public, repB_avg_local)
-                    lossKD_A1 = self.criterion_KL(repA_public1, repA1_avg_local)
-                    norm2loss_A1 = torch.dist(repA_public1, repA1_avg_local, p=2)
-                    lossJSD_A1 = self.criterion_JSD(repA_public1, repA1_avg_local)
-                    lossKD_B1 = self.criterion_KL(repB_public1, repB1_avg_local)
-                    norm2loss_B1 = torch.dist(repB_public1, repB1_avg_local, p=2)
-                    lossJSD_B1 = self.criterion_JSD(repB_public1, repB1_avg_local)
-                    lossSim_A = self.cos(repA_public, repA_avg_local)
-                    lossSim1_A1 = self.cos(repA_public1, repA1_avg_local)
-                    lossSim_B = self.cos(repB_public, repB_avg_local)
-                    lossSim1_B1 = self.cos(repB_public1, repB1_avg_local)
-                    loss_A = self.criterion_MSE(output_A, seq_A_public[:, inv_idx_public, :])
-                    loss_B = self.criterion_MSE(output_B, seq_B_public[:, inv_idx_public, :])
-                    loss_dcc = self.criterion_DCC.loss(rep_A, rep_B)
-                    if Global_CDKT_metric == "KL":
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * lossKD_A + gamma * lossKD_B  +sigma*(lossKD_A1+lossKD_B1)
-                    elif Global_CDKT_metric == "Norm2":
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * norm2loss_A + gamma * norm2loss_B + sigma*(norm2loss_A1+norm2loss_B1)
-                    elif Global_CDKT_metric == "JSD":
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) + eta * lossJSD_A  + gamma * lossJSD_B + sigma*(lossJSD_A1+ lossJSD_B1)
-                    elif Global_CDKT_metric == "Cos":
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B) - eta *(lossSim_A.mean() + lossSim1_A1.mean()) -gamma*(lossSim_B.mean() + lossSim1_B1.mean())
-                    loss.backward()
-                    self.optimizer_glob_ae.step()
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                Global_Rec_loss.extend(Global_ReconstructionLoss)
-                Global_KT_Loss.extend(Global_Knowledge_Transfer_Loss)
+
+
+                    Global_Rec_loss.extend(Global_ReconstructionLoss)
+                    Global_KT_Loss.extend(Global_Knowledge_Transfer_Loss)
             Global_Rec_round_loss.append(np.mean(Global_Rec_loss))
             Global_KT_round_loss.append(np.mean(Global_KT_Loss))
         # self.unfreeze(self.model)
@@ -592,7 +545,7 @@ class MultimodalRep(Dem_Server):
             inputs = torch.from_numpy(x).double().to(self.device)
             targets = torch.from_numpy(y.flatten()).to(self.device)
             rpts, _ = user.model.encode(inputs, self.test_modality)
-            # rpts = user.model.encode(inputs, self.test_modality)
+            # rpts= user.model.encode(inputs, self.test_modality)
             if Global_Classifier:
                 output = self.model_server(rpts)
             else:
@@ -660,7 +613,7 @@ class MultimodalRep(Dem_Server):
             inputs = torch.from_numpy(x).double().to(self.device)
             targets = torch.from_numpy(y.flatten()).to(self.device)
             rpts,_ = self.model.encode(inputs, self.test_modality)
-            # rpts= self.model.encode(inputs, self.test_modality)
+            # rpts = self.model.encode(inputs, self.test_modality)
             output = self.model_server(rpts)
 
             loss = self.criterion(output, targets.long())
@@ -750,7 +703,6 @@ class MultimodalRep(Dem_Server):
             if Global_Classifier==False:
                 for user in self.selected_users:
                     user.local_classifier_fine_tune(local_classifier_epochs,self.train_A,self.train_B)
-
 
             client_avg_acc=self.evaluating_encoder_clients()
             self.c_avg_test.append(client_avg_acc)

@@ -21,10 +21,11 @@ def args_parser():
 
     parser.add_argument("--dataset", type=str, default=Input_DS, choices=["mhealth","opp","ur_fall"])
     # parser.add_argument("--server_model", type=str, default="cnn", choices=["cnn","resnet"])
-    parser.add_argument("--algorithm", type=str, default=Input_Alg, choices=["mmFedAvg","FedMEKT"])
+    parser.add_argument("--algorithm", type=str, default=Input_Alg, choices=["mmFedAvg","mmFedProx","FedMEKT","FedEKD","FedMEFKT"])
     parser.add_argument("--model", type=str, default=MODEL_AE, choices=["split_LSTM", "DCCAE_LSTM"])
     parser.add_argument("--model_server", type=str, default="MLP", choices=[ "MLP"])
-
+    parser.add_argument("--embedding_layer", type=str, default="Dense", choices=["Dense"])
+    parser.add_argument("--embedding_layer1", type=str, default="Dense1", choices=["Dense1"])
     parser.add_argument("--label_modality", type=str, default=label_modality, choices=["A","B"])
     parser.add_argument("--batch_size", type=int, default=20)
     parser.add_argument("--learning_rate", type=float, default=local_learning_rate, help="Local learning rate")

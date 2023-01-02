@@ -14,10 +14,10 @@ import copy
 from Setting import *
 
 class Dem_Server(Server):
-    def __init__(self, train_A, train_B,experiment, device, dataset,algorithm, model, model_server, batch_size, learning_rate ,
+    def __init__(self, train_A, train_B,experiment, device, dataset,algorithm, model, model_server, embedding_layer, embedding_layer1,batch_size, learning_rate ,
                  num_glob_iters, local_epochs, optimizer,num_users, times, args=None):
-        super().__init__(train_A, train_B,experiment, device, dataset,algorithm, model, model_server, batch_size, learning_rate,  num_glob_iters,
-                         local_epochs, optimizer, num_users, times,args)
+        super().__init__(train_A, train_B,experiment, device, dataset,algorithm, model, model_server, embedding_layer,embedding_layer1,batch_size,
+                         learning_rate,  num_glob_iters,local_epochs, optimizer, num_users, times,args)
 
         #DEMLEARN PARAMS
         if(args is not None):

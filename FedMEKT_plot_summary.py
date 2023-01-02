@@ -175,20 +175,20 @@ def plot_ur_fall_local():
     # print("CDKTKLN Global :", f_data['root_test'][12])
     # print("CDKTKLN C-GEN:", f_data['cg_avg_data_test'][XLim - 1])
 
-    ax1.plot(mmfedavgAcceRgb_testAcce['avg_local_f1_acc'], label="mmFedAvg_Acce",  color=color["gen"], marker=marker["gen"],
+    ax1.plot(mmfedavgAcceRgb_testAcce['avg_local_f1_acc'], label="Mm-FedAvg(Acce)",  color=color["gen"], marker=marker["gen"],
              markevery=markers_on)
     ax1.plot(np.arange(len(mmfedavgAcceRgb_testRgb['avg_local_f1_acc'])), mmfedavgAcceRgb_testRgb['avg_local_f1_acc'],
-             color=color["gen"], linestyle='dashdot',
+             color=color["c"], linestyle='dashdot',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedAvg_Rgb")
+             label="Mm-FedAvg(Rgb)")
 
-    ax1.plot(np.arange(len(mmfedEKTAcceRgb_testAcce['avg_local_f1_acc'])), mmfedEKTAcceRgb_testAcce['avg_local_f1_acc'], color=color["cgen"],
-             marker=marker["cgen"], markevery=markers_on,
-             label="mmFedEKT_Acce")
+    ax1.plot(np.arange(len(mmfedEKTAcceRgb_testAcce['avg_local_f1_acc'])), mmfedEKTAcceRgb_testAcce['avg_local_f1_acc'], color=color["g"],
+             marker=marker["ggen"], markevery=markers_on,
+             label="FedMEKT(Acce)")
     ax1.plot(np.arange(len(mmfedEKTAcceRgb_testRgb['avg_local_f1_acc'])), mmfedEKTAcceRgb_testRgb['avg_local_f1_acc'],
              color=color["cgen"], linestyle='dashdot',
              marker=marker["ggen"], markevery=markers_on,
-             label="mmFedEKT_Rgb")
+             label="FedMEKT(Rgb)")
 
 
     ax1.set_xlim(0, XLim)
@@ -202,22 +202,26 @@ def plot_ur_fall_local():
 
     # print("CDKTKL Global", f_data['root_test'][12])
     # print("CDKTKL C-SPE:", f_data['cs_avg_data_test'][XLim - 1])
-    ax2.plot(np.arange(len( mmfedavgAcceDepth_testDepth['avg_local_f1_acc'])),  mmfedavgAcceDepth_testDepth['avg_local_f1_acc'],
-             color=color["c"],
-             marker=marker["gen"], markevery=markers_on,
-             label="mmFedAvg_Depth")
+
     ax2.plot(np.arange(len( mmfedavgAcceDepth_testAcce['avg_local_f1_acc'])),  mmfedavgAcceDepth_testAcce['avg_local_f1_acc'],
-             color=color["gen"], linestyle='dashdot',
+             color=color["c"], linestyle='dashdot',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedAvg_Acce")
-    ax2.plot(np.arange(len( mmfedEKTAcceDepth_testDepth['avg_local_f1_acc'])),  mmfedEKTAcceDepth_testDepth['avg_local_f1_acc'],
-             color=color["g"],
-             marker=marker["ggen"], markevery=markers_on,
-             label="mmFedEKT_Depth")
+             label="Mm-FedAvg(Acce)")
+    ax2.plot(np.arange(len(mmfedavgAcceDepth_testDepth['avg_local_f1_acc'])),
+             mmfedavgAcceDepth_testDepth['avg_local_f1_acc'],
+             color=color["gen"],
+             marker=marker["gen"], markevery=markers_on,
+             label="Mm-FedAvg(Depth)")
+
     ax2.plot(np.arange(len( mmfedEKTAcceDepth_testAcce['avg_local_f1_acc'])),  mmfedEKTAcceDepth_testAcce['avg_local_f1_acc'],
              color=color["cgen"],linestyle='dashdot',
              marker=marker["ggen"], markevery=markers_on,
-             label="mmFedEKT_Acce")
+             label="FedMEKT(Acce)")
+    ax2.plot(np.arange(len(mmfedEKTAcceDepth_testDepth['avg_local_f1_acc'])),
+             mmfedEKTAcceDepth_testDepth['avg_local_f1_acc'],
+             color=color["g"],
+             marker=marker["ggen"], markevery=markers_on,
+             label="FedMEKT(Depth)")
     # ax3.legend(loc="best", prop={'size': 8})
     ax2.set_xlim(0, XLim)
     ax2.set_ylim(YLim, 0.8)
@@ -228,24 +232,24 @@ def plot_ur_fall_local():
     ax3.plot(np.arange(len(mmfedavgRgbDepth_testRgb['avg_local_f1_acc'])), mmfedavgRgbDepth_testRgb['avg_local_f1_acc'],
              color=color["gen"],
              marker=marker["gen"], markevery=markers_on,
-             label="mmFedAvg_Rgb")
+             label="Mm-FedAvg(Rgb)")
     ax3.plot(np.arange(len(mmfedavgRgbDepth_testDepth['avg_local_f1_acc'])), mmfedavgRgbDepth_testDepth['avg_local_f1_acc'],
-             color=color["gen"],linestyle='dashdot',
+             color=color["c"],linestyle='dashdot',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedAvg_Depth")
+             label="Mm-FedAvg(Depth)")
     ax3.plot(np.arange(len(mmfedEKTRgbDepth_testRgb['avg_local_f1_acc'])), mmfedEKTRgbDepth_testRgb['avg_local_f1_acc'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
-             label="mmFedEKT_Rgb")
+             label="FedMEKT(Rgb)")
     ax3.plot(np.arange(len(mmfedEKTRgbDepth_testDepth['avg_local_f1_acc'])), mmfedEKTRgbDepth_testDepth['avg_local_f1_acc'],
              color=color["cgen"],linestyle='dashdot',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedEKT_Depth")
+             label="FedMEKT(Depth)")
     # ax3.legend(loc="best", prop={'size': 8})
     ax3.set_xlim(0, XLim)
     ax3.set_ylim(YLim, 0.8)
     ax3.grid()
-    ax3.set_title(DATASET + " " +"Local acc"+ "Rgb-Depth")
+    ax3.set_title(DATASET + " " + "Rgb-Depth")
     ax3.set_xlabel("#Global Rounds")
 
 
@@ -261,6 +265,114 @@ def plot_ur_fall_local():
     plt.subplots_adjust(bottom=0.25)
     plt.savefig(PLOT_PATH+"local perf"+DATASET  + OUT_TYPE)
 
+def plot_ur_fall_project():
+    plt.rcParams.update({'font.size': 14})
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, sharex=True, sharey=True, figsize=(15, 4.4))
+
+    # fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(nrows=1, ncols=5, sharex=True, sharey=True, figsize=(15.0, 4.4))
+    mmfedavgAcceRgb_testAcce = read_data(RS_PATH + name['mmfedavg_acce_rgb_testacce'])
+    mmfedavgAcceRgb_testRgb = read_data(RS_PATH + name['mmfedavg_acce_rgb_testrgb'])
+    mmfedavgAcceDepth_testDepth = read_data(RS_PATH + name['mmfedavg_acce_depth_testdepth'])
+    mmfedavgAcceDepth_testAcce = read_data(RS_PATH + name['mmfedavg_acce_depth_testacce'])
+    mmfedavgRgbDepth_testRgb = read_data(RS_PATH + name['mmfedavg_rgb_depth_testrgb'])
+    mmfedavgRgbDepth_testDepth = read_data(RS_PATH + name['mmfedavg_rgb_depth_testdepth'])
+    mmfedEKDAcceRgb_testAcce = read_data(RS_PATH + name['FedEKD_acce_rgb_testacce'])
+    mmfedEKDAcceRgb_testRgb = read_data(RS_PATH + name['FedEKD_acce_rgb_testrgb'])
+    mmfedEKDAcceDepth_testDepth = read_data(RS_PATH + name['FedEKD_acce_depth_testdepth'])
+    mmfedEKDAcceDepth_testAcce = read_data(RS_PATH + name['FedEKD_acce_depth_testacce'])
+    mmfedEKDRgbDepth_testRgb = read_data(RS_PATH + name['FedEKD_rgb_depth_testrgb'])
+    mmfedEKDRgbDepth_testDepth = read_data(RS_PATH + name['FedEKD_rgb_depth_testdepth'])
+
+
+    # print("CDKTKLN Global :", f_data['root_test'][12])
+    # print("CDKTKLN C-GEN:", f_data['cg_avg_data_test'][XLim - 1])
+
+    ax1.plot(mmfedavgAcceRgb_testAcce['root_test'], label="MM-FedAvg(Acce)",  color=color["gen"], marker=marker["gen"],
+             markevery=markers_on)
+    ax1.plot(np.arange(len(mmfedavgAcceRgb_testRgb['root_test'])), mmfedavgAcceRgb_testRgb['root_test'],
+             color=color["c"], linestyle='dashed',
+             marker=marker["cgen"], markevery=markers_on,
+             label="MM-FedAvg(Rgb)")
+
+    ax1.plot(np.arange(len(mmfedEKDAcceRgb_testAcce['root_test'])), mmfedEKDAcceRgb_testAcce['root_test'], color=color["g"],
+             marker=marker["cgen"], markevery=markers_on,
+             label="MM-FedEKD(Acce)")
+    ax1.plot(np.arange(len(mmfedEKDAcceRgb_testRgb['root_test'])), mmfedEKDAcceRgb_testRgb['root_test'],
+             color=color["cgen"], linestyle='dashed',
+             marker=marker["ggen"], markevery=markers_on,
+             label="MM-FedEKD(Rgb)")
+
+
+
+    ax1.set_xlim(0, XLim)
+    ax1.set_ylim(YLim, 0.8)
+    ax1.set_title(DATASET+" "+ "Acce-Rgb")
+    ax1.set_xlabel("#Global Rounds")
+    ax1.set_ylabel("Testing Accuracy")
+    ax1.grid()
+    # subfig1-end---begin---subfig 2
+
+
+    # print("CDKTKL Global", f_data['root_test'][12])
+    # print("CDKTKL C-SPE:", f_data['cs_avg_data_test'][XLim - 1])
+    ax2.plot(np.arange(len( mmfedavgAcceDepth_testDepth['root_test'])),  mmfedavgAcceDepth_testDepth['root_test'],
+             color=color["gen"],
+             marker=marker["gen"], markevery=markers_on,
+             label="MM-FedAvg(Depth)")
+    ax2.plot(np.arange(len( mmfedavgAcceDepth_testAcce['root_test'])),  mmfedavgAcceDepth_testAcce['root_test'],
+             color=color["c"], linestyle='dashed',
+             marker=marker["cgen"], markevery=markers_on,
+             label="MM-FedAvg(Acce)")
+    ax2.plot(np.arange(len( mmfedEKDAcceDepth_testDepth['root_test'])),  mmfedEKDAcceDepth_testDepth['root_test'],
+             color=color["g"],
+             marker=marker["ggen"], markevery=markers_on,
+             label="MM-FedEKD(Depth)")
+    ax2.plot(np.arange(len( mmfedEKDAcceDepth_testAcce['root_test'])),  mmfedEKDAcceDepth_testAcce['root_test'],
+             color=color["cgen"],linestyle='dashed',
+             marker=marker["ggen"], markevery=markers_on,
+             label="MM-FedEKD(Acce)")
+    # ax3.legend(loc="best", prop={'size': 8})
+    ax2.set_xlim(0, XLim)
+    ax2.set_ylim(YLim, 0.8)
+    ax2.grid()
+    ax2.set_title(DATASET+" "+ "Acce-Depth")
+    ax2.set_xlabel("#Global Rounds")
+
+    ax3.plot(np.arange(len(mmfedavgRgbDepth_testRgb['root_test'])), mmfedavgRgbDepth_testRgb['root_test'],
+             color=color["gen"],
+             marker=marker["gen"], markevery=markers_on,
+             label="MM-FedAvg(Rgb)")
+    ax3.plot(np.arange(len(mmfedavgRgbDepth_testDepth['root_test'])), mmfedavgRgbDepth_testDepth['root_test'],
+             color=color["c"],linestyle='dashed',
+             marker=marker["cgen"], markevery=markers_on,
+             label="MM-FedAvg(Depth)")
+    ax3.plot(np.arange(len(mmfedEKDRgbDepth_testRgb['root_test'])), mmfedEKDRgbDepth_testRgb['root_test'],
+             color=color["g"],
+             marker=marker["ggen"], markevery=markers_on,
+             label="MM-FedEKD(Rgb)")
+    ax3.plot(np.arange(len(mmfedEKDRgbDepth_testDepth['root_test'])), mmfedEKDRgbDepth_testDepth['root_test'],
+             color=color["cgen"],linestyle='dashed',
+             marker=marker["cgen"], markevery=markers_on,
+             label="MM-FedEKD(Depth)")
+    # ax3.legend(loc="best", prop={'size': 8})
+    ax3.set_xlim(0, XLim)
+    ax3.set_ylim(YLim, 0.9)
+    ax3.grid()
+    ax3.set_title(DATASET + " " + "Rgb-Depth")
+    ax3.set_xlabel("#Global Rounds")
+
+
+
+    # handles, labels = ax1.get_legend_handles_labels()
+    ax1.legend( loc="lower right",
+               prop={'size': 14})  # mode="expand",  mode="expand", frameon=False,
+    # handles2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(loc="lower right",
+               prop={'size': 14})  # mode="expand",  mode="expand", frameon=False,
+    ax3.legend(loc="lower right",
+               prop={'size': 14})  # mode="expand",  mode="expand", frameon=False,
+    plt.subplots_adjust(bottom=0.25)
+    plt.savefig(PLOT_PATH+ DATASET  + "Project"+ OUT_TYPE)
 def plot_mhealth():
     plt.rcParams.update({'font.size': 14})
     fig, (ax1,ax2,ax3) = plt.subplots(nrows=1, ncols=3, sharex=True, sharey=True, figsize=(15, 4.4))
@@ -371,7 +483,7 @@ def plot_mhealth():
 
 
 def plot_mhealth_local():
-    plt.rcParams.update({'font.size': 60})
+    plt.rcParams.update({'font.size': 14})
     fig, (ax1,ax2,ax3) = plt.subplots(nrows=1, ncols=3, sharex=True, sharey=True, figsize=(15, 4.4))
 
     # fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(nrows=1, ncols=5, sharex=True, sharey=True, figsize=(15.0, 4.4))
@@ -393,20 +505,20 @@ def plot_mhealth_local():
     # print("CDKTKLN Global :", f_data['root_test'][12])
     # print("CDKTKLN C-GEN:", f_data['cg_avg_data_test'][XLim - 1])
 
-    ax1.plot(mmfedavgAcceGyro_testAcce['avg_local_f1_acc'], label="mmFedAvg_Acce",  color=color["gen"], marker=marker["gen"],
+    ax1.plot(mmfedavgAcceGyro_testAcce['avg_local_f1_acc'], label="Mm-FedAvg(Acce)",  color=color["gen"], marker=marker["gen"],
              markevery=markers_on)
 
-    ax1.plot(np.arange(len(mmfedavgAcceGyro_testGyro['avg_local_f1_acc'])), mmfedavgAcceGyro_testGyro['avg_local_f1_acc'], color=color["gen"],
-             marker=marker["cgen"], markevery=markers_on,linestyle='dashed',
-             label="mmFedAvg_Gyro")
+    ax1.plot(np.arange(len(mmfedavgAcceGyro_testGyro['avg_local_f1_acc'])), mmfedavgAcceGyro_testGyro['avg_local_f1_acc'], color=color["c"],
+             marker=marker["cgen"], markevery=markers_on,linestyle='dashdot',
+             label="Mm-FedAvg(Gyro)")
     ax1.plot(np.arange(len( mmfedEKTAcceGyro_testAcce['avg_local_f1_acc'])),  mmfedEKTAcceGyro_testAcce['avg_local_f1_acc'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
-             label="mmFedEKT_Acce")
+             label="FedMEKT(Acce)")
     ax1.plot(np.arange(len( mmfedEKTAcceGyro_testGyro['avg_local_f1_acc'])),  mmfedEKTAcceGyro_testGyro['avg_local_f1_acc'],
-             color=color["cgen"],linestyle='dashed',
+             color=color["cgen"],linestyle='dashdot',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedEKT_Gyro")
+             label="FedMEKT(Gyro)")
 
     ax1.set_xlim(0, XLim)
     ax1.set_ylim(YLim, 1)
@@ -422,19 +534,19 @@ def plot_mhealth_local():
     ax2.plot(np.arange(len( mmfedavgGyroMage_testGyro['avg_local_f1_acc'])),  mmfedavgGyroMage_testGyro['avg_local_f1_acc'],
              color=color["gen"],
              marker=marker["gen"], markevery=markers_on,
-             label="mmFedAvg_Gyro")
+             label="Mm-FedAvg(Gyro)")
     ax2.plot(np.arange(len( mmfedavgGyroMage_testMage['avg_local_f1_acc'])),  mmfedavgGyroMage_testMage['avg_local_f1_acc'],
-             color=color["gen"],linestyle='dashed',
+             color=color["c"],linestyle='dashed',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedAvg_Mage")
+             label="Mm-FedAvg(Mage)")
     ax2.plot(np.arange(len( mmfedEKTGyroMage_testGyro['avg_local_f1_acc'])),  mmfedEKTGyroMage_testGyro['avg_local_f1_acc'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
-             label="mmFedEKT_Gyro")
+             label="FedMEKT(Gyro)")
     ax2.plot(np.arange(len( mmfedEKTGyroMage_testMage['avg_local_f1_acc'])),  mmfedEKTGyroMage_testMage['avg_local_f1_acc'],
              color=color["cgen"],linestyle='dashed',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedEKT_Mage")
+             label="FedMEKT(Mage)")
     # ax3.legend(loc="best", prop={'size': 8})
     ax2.set_xlim(0, XLim)
     ax2.set_ylim(YLim, 1)
@@ -445,19 +557,19 @@ def plot_mhealth_local():
     ax3.plot(np.arange(len(mmfedavgAcceMage_testAcce['avg_local_f1_acc'])), mmfedavgAcceMage_testAcce['avg_local_f1_acc'],
              color=color["gen"],
              marker=marker["gen"], markevery=markers_on,
-             label="mmFedAvg_Acce")
+             label="Mm-FedAvg(Acce)")
     ax3.plot(np.arange(len(mmfedavgAcceMage_testMage['avg_local_f1_acc'])), mmfedavgAcceMage_testMage['avg_local_f1_acc'],
-             color=color["gen"],linestyle='dashed',
+             color=color["c"],linestyle='dashed',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedAvg_Mage")
+             label="Mm-FedAvg(Mage)")
     ax3.plot(np.arange(len(mmfedEKTAcceMage_testAcce['avg_local_f1_acc'])), mmfedEKTAcceMage_testAcce['avg_local_f1_acc'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
-             label="mmFedEKT_Acce")
+             label="FedMEKT(Acce)")
     ax3.plot(np.arange(len(mmfedEKTAcceMage_testMage['avg_local_f1_acc'])), mmfedEKTAcceMage_testMage['avg_local_f1_acc'],
              color=color["cgen"],linestyle='dashed',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedEKT_Mage")
+             label="FedMEKT(Mage)")
     ax3.legend(loc="best", prop={'size': 8})
     ax3.set_xlim(0, XLim)
     ax3.set_ylim(YLim, 1)
@@ -469,12 +581,12 @@ def plot_mhealth_local():
 
     # handles, labels = ax1.get_legend_handles_labels()
     ax1.legend( loc="lower right",
-               prop={'size': 40})  # mode="expand",  mode="expand", frameon=False,
+               prop={'size': 14})  # mode="expand",  mode="expand", frameon=False,
     # handles2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(loc="lower right",
-               prop={'size': 40})  # mode="expand",  mode="expand", frameon=False,
+               prop={'size': 14})  # mode="expand",  mode="expand", frameon=False,
     ax3.legend(loc="lower right",
-               prop={'size': 40})  # mode="expand",  mode="expand", frameon=False,
+               prop={'size': 14})  # mode="expand",  mode="expand", frameon=False,
     plt.subplots_adjust(bottom=0.25)
     plt.savefig(PLOT_PATH+ "Local perf"+DATASET  + OUT_TYPE)
 def plot_opp():
@@ -532,8 +644,8 @@ def plot_opp():
     plt.savefig(PLOT_PATH+ DATASET  + OUT_TYPE)
 
 def plot_opp_local():
-    plt.rcParams.update({'font.size': 60})
-    fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharex=True, sharey=True, figsize=(45, 25))
+    plt.rcParams.update({'font.size': 14})
+    fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharex=True, sharey=True, figsize=(5.4,4.4))
 
     # fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(nrows=1, ncols=5, sharex=True, sharey=True, figsize=(15.0, 4.4))
     mmfedavgAcceGyro_testAcce = read_data(RS_PATH + name['mmfedavg_acce_gyro_testacce'])
@@ -547,25 +659,25 @@ def plot_opp_local():
     # print("CDKTKLN Global :", f_data['root_test'][12])
     # print("CDKTKLN C-GEN:", f_data['cg_avg_data_test'][XLim - 1])
 
-    ax1.plot(mmfedavgAcceGyro_testAcce['avg_local_f1_acc'], label="mmFedAvg_Acce",  color=color["gen"], marker=marker["gen"],
+    ax1.plot(mmfedavgAcceGyro_testAcce['avg_local_f1_acc'], label="Mm-FedAvg(Acce)",  color=color["gen"], marker=marker["gen"],
              markevery=markers_on)
 
-    ax1.plot(np.arange(len(mmfedavgAcceGyro_testGyro['avg_local_f1_acc'])), mmfedavgAcceGyro_testGyro['avg_local_f1_acc'], color=color["gen"],
+    ax1.plot(np.arange(len(mmfedavgAcceGyro_testGyro['avg_local_f1_acc'])), mmfedavgAcceGyro_testGyro['avg_local_f1_acc'], color=color["c"],
              linestyle='dashed',marker=marker["cgen"], markevery=markers_on,
-             label="mmFedAvg_Gyro")
+             label="Mm-FedAvg(Gyro)")
     ax1.plot(np.arange(len(mmfedEKTAcceGyro_testAcce['avg_local_f1_acc'])), mmfedEKTAcceGyro_testAcce['avg_local_f1_acc'],
-             color=color["cgen"],
+             color=color["g"],
              marker=marker["ggen"], markevery=markers_on,
-             label="mmFedEKT_Acce")
+             label="FedMEKT(Acce)")
     ax1.plot(np.arange(len(mmfedEKTAcceGyro_testGyro['avg_local_f1_acc'])), mmfedEKTAcceGyro_testGyro['avg_local_f1_acc'],
              color=color["cgen"],linestyle='dashed',
              marker=marker["cgen"], markevery=markers_on,
-             label="mmFedEKT_Gyro")
+             label="FedMEKT(Gyro)")
 
 
     ax1.set_xlim(0, XLim)
     ax1.set_ylim(YLim, 1)
-    ax1.set_title(DATASET+"  "+ "Local Acc"+ "Acce-Gyro")
+    ax1.set_title(DATASET+"  "+ "Acce-Gyro")
     ax1.set_xlabel("#Global Rounds")
     ax1.set_ylabel("Local Testing Accuracy")
     ax1.grid()
@@ -579,7 +691,7 @@ def plot_opp_local():
 
     # handles, labels = ax1.get_legend_handles_labels()
     ax1.legend( loc="lower right",
-               prop={'size': 40})  # mode="expand",  mode="expand", frameon=False,
+               prop={'size': 14})  # mode="expand",  mode="expand", frameon=False,
     # handles2, labels2 = ax2.get_legend_handles_labels()
 
     plt.subplots_adjust(bottom=0.25)
@@ -1107,8 +1219,8 @@ if __name__=='__main__':
     }
 
 
-    plot_mhealth()
-    plot_mhealth_local()
+    # plot_mhealth()
+    # plot_mhealth_local()
     # plot_all_figs()
     # plot_KCC2022()
     # plot_mhealth_acce_gyro()
@@ -1121,7 +1233,7 @@ if __name__=='__main__':
     # plot_beta_effect2()
     # plot_KSC()
     print("----- PLOT OPP ------")
-    DATASET = "opp"
+    DATASET = "Opp"
     NUM_GLOBAL_ITERS = 100
     XLim = NUM_GLOBAL_ITERS
     Den_GAP = 7
@@ -1138,8 +1250,8 @@ if __name__=='__main__':
 
 
     }
-    plot_opp()
-    plot_opp_local()
+    # plot_opp()
+    # plot_opp_local()
     print("----- PLOT URFall ------")
     DATASET = "URFall"
     NUM_GLOBAL_ITERS = 100
@@ -1168,11 +1280,18 @@ if __name__=='__main__':
         "mmfedEKT_acce_depth_testdepth_onelayer": "mmFedEKT_ur_fall_LAB_TB_I100_Maacce_Mbdepth_alpha0.07_eta0.07_beta0.005_gamma0.005_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerTrue_globalclsFalse.h5",
         "mmfedEKT_rgb_depth_testrgb_onelayer": "mmFedEKT_ur_fall_LAB_TA_I100_Margb_Mbdepth_alpha0.1_eta0.1_beta0.005_gamma0.005_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerTrue_globalclsFalse.h5",
         "mmfedEKT_rgb_depth_testdepth_onelayer": "mmFedEKT_ur_fall_LAB_TB_I100_Margb_Mbdepth_alpha0.1_eta0.1_beta0.005_gamma0.005_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerTrue_globalclsFalse.h5",
-        "mmfedEKT_acce_rgb_testacce_onelayer": "mmFedEKT_ur_fall_LAB_TA_I100_Maacce_Mbrgb_alpha0.1_eta0.1_beta0.005_gamma0.005_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerTrue_globalclsFalse.h5"
+        "mmfedEKT_acce_rgb_testacce_onelayer": "mmFedEKT_ur_fall_LAB_TA_I100_Maacce_Mbrgb_alpha0.1_eta0.1_beta0.005_gamma0.005_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerTrue_globalclsFalse.h5",
+        "FedEKD_acce_rgb_testacce": "FedEKD_ur_fall_LAB_TA_I100_Maacce_Mbrgb_alpha3_eta0.02_beta9_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5",
+        "FedEKD_acce_rgb_testrgb": "FedEKD_ur_fall_LAB_TB_I100_Maacce_Mbrgb_alpha3_eta0.02_beta5_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5",
+        "FedEKD_acce_depth_testdepth": "FedEKD_ur_fall_LAB_TB_I100_Maacce_Mbdepth_alpha3_eta0.02_beta5_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5",
+        "FedEKD_acce_depth_testacce": "FedEKD_ur_fall_LAB_TA_I100_Maacce_Mbdepth_alpha3_eta0.02_beta5_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5",
+        "FedEKD_rgb_depth_testrgb": "FedEKD_ur_fall_LAB_TA_I100_Margb_Mbdepth_alpha3_eta0.02_beta1_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5",
+        "FedEKD_rgb_depth_testdepth": "FedEKD_ur_fall_LAB_TB_I100_Margb_Mbdepth_alpha3_eta0.02_beta3_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5",
 
     }
-    plot_ur_fall()
-    plot_ur_fall_local()
+    # plot_ur_fall()
+    # plot_ur_fall_local()
+    plot_ur_fall_project()
     # plot_all_figs()
     # plot_KCC2022()
     # plot_fixed_users()

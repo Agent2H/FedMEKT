@@ -25,10 +25,10 @@ def plot_final():
     df_iters = read_files_global_urfall()
 #     plot_box(df_iters,3)
 #     plt.savefig("figs/fmnist_fixed_users_boxplot.pdf")
-#     df_iters = read_files3()
+    df_iters = read_files3()
 #     plot_box(df_iters,4)
 #     plt.savefig("figs/fmnist_subset_users_boxplot.pdf")
-#     df_iters = read_files4()
+    df_iters = read_files4()
 #     plot_box(df_iters, 5)
 #     plt.savefig("figs/cifar10_fixed_users_boxplot.pdf")
 #     df_iters = read_files5()
@@ -79,7 +79,7 @@ def read_files_opp_global():
     df5 = h5py.File(os.path.join(directory, 'mmFedEKT_opp_LAB_TA_I100_Maacce_Mbgyro_alpha0.05_eta0.05_beta0.009_gamma0.009_SSTrue_gmKL_lmKL_ratio0.11_depoch1_onelayerFalse_globalclsTrue.h5'), 'r')
     df6 = h5py.File(os.path.join(directory,'mmFedEKT_opp_LAB_TB_I100_Maacce_Mbgyro_alpha0.01_eta0.01_beta0.007_gamma0.007_SSTrue_gmKL_lmKL_ratio0.11_depoch1_onelayerFalse_globalclsTrue.h5'), 'r')
     df7 = h5py.File(os.path.join(directory, 'mmFedEKT_opp_LAB_TA_I100_Maacce_Mbgyro_alpha0.05_eta0.05_beta0.005_gamma0.005_SSTrue_gmKL_lmKL_ratio0.11_depoch1_onelayerTrue_globalclsFalse.h5'), 'r')
-    df8 = h5py.File(os.path.join(directory,'mmFedEKT_opp_LAB_TB_I100_Maacce_Mbgyro_alpha0.02_eta0.02_beta0.005_gamma0.005_SSTrue_gmKL_lmKL_ratio0.11_depoch1_onelayerTrue_globalclsFalse.h5'), 'r')
+    df8 = h5py.File(os.path.join(directory,'FedMEKT_opp_LAB_TA_I100_Maacce_Mbgyro_alpha0.05_eta0.05_beta0.009_gamma0.009_SSTrue_gmKL_lmKL_ratio0.11_depoch1_onelayerFalse_globalclsDrFalse_publicratio1.h5'), 'r')
     # stop1 = df['stop1'][:]
 
     # glob1 = df['root_test'][Start_index:]
@@ -92,6 +92,7 @@ def read_files_opp_global():
     # gen4 = df4['cg_avg_data_test'][Start_index:]
 
     #
+    test1= df8['root_test'][Table_index1:Table_index2]
     glob1 = df['root_test'][Table_index1:Table_index2]
     spec1 = df['avg_local_f1_acc'][Table_index1:Table_index2]
     glob2 = df2['root_test'][Table_index1:Table_index2]
@@ -104,6 +105,7 @@ def read_files_opp_global():
     spec6 = df6['avg_local_f1_acc'][Table_index1:Table_index2]
     glob7 = df7['root_test'][Table_index1:Table_index2]
     glob8 = df8['root_test'][Table_index1:Table_index2]
+    # print("spec test", np.median(df8['avg_local_f1_acc'][Table_index1:Table_index2]) )
     # glob5 = df5['root_test'][Table_index1:Table_index2]
     # glob6 = df6['root_test'][Table_index1:Table_index2]
 
@@ -534,93 +536,142 @@ def read_files_global_urfall():
     df_iters = pd.melt(df_iters, var_name='Algorithm', value_name='Accuracy')
     # print(df_iters)
     return df_iters
-# def read_files3():
-#     directory = "./results_fig/"
-#     df = h5py.File(os.path.join(directory, 'CDKT_fmnist_I100_sTrue_fFalse_a0.2_b0.06_RFFalse_SSTrue_accFalse_gmKL_lmNorm2.h5'), 'r')
-#     df2 = h5py.File(os.path.join(directory, 'CDKT_fmnist_I100_sTrue_fFalse_a0.2_b0.06_RFTrue_SSTrue_accFalse_gmKL_lmNorm2.h5'), 'r')
-#     df3 = h5py.File(os.path.join(directory, 'CDKT_fmnist_I100_sTrue_fTrue_a0.2_b0.06_RFTrue_SSTrue_accFalse_gmKL_lmNorm2.h5'), 'r')
-#     df4 = h5py.File(os.path.join(directory, 'fedavg_fmnist_I100_sTrue_fTrue_a0.2_b0.06_RFTrue_SSTrue_accFalse_gmKL_lmNorm2.h5'), 'r')
-#     df5 = h5py.File(os.path.join(directory, 'CDKT_fmnist_I100_sTrue_fFalse_a0_b0_RFFalse_SSTrue_accFalse_gmKL_lmNorm2.h5'), 'r')
-#     # stop1 = df['stop1'][:]
-#
-#     # glob1 = df['root_test'][Start_index:]
-#     # gen1 = df['cg_avg_data_test'][Start_index:]
-#     # glob2 = df2['root_test'][Start_index:]
-#     # gen2 = df2['cg_avg_data_test'][Start_index:]
-#     # glob3 = df3['root_test'][Start_index:]
-#     # gen3 = df3['cg_avg_data_test'][Start_index:]
-#     # glob4 = df4['root_test'][Start_index:]
-#     # gen4 = df4['cg_avg_data_test'][Start_index:]
-#
-#
-#     glob1 = df['root_test'][Table_index1:Table_index2]
-#     gen1 = df['cg_avg_data_test'][Table_index1:Table_index2]
-#     spec1 = df['cs_avg_data_test'][Table_index1:Table_index2]
-#     glob2 = df2['root_test'][Table_index1:Table_index2]
-#     gen2 = df2['cg_avg_data_test'][Table_index1:Table_index2]
-#     spec2 = df2['cs_avg_data_test'][Table_index1:Table_index2]
-#     glob3 = df3['root_test'][Table_index1:Table_index2]
-#     gen3 = df3['cg_avg_data_test'][Table_index1:Table_index2]
-#     spec3 = df3['cs_avg_data_test'][Table_index1:Table_index2]
-#     glob4 = df4['root_test'][Table_index1:Table_index2]
-#     gen4 = df4['cg_avg_data_test'][Table_index1:Table_index2]
-#     spec4 = df4['cs_avg_data_test'][Table_index1:Table_index2]
-#     glob5 = df5['root_test'][Table_index1:Table_index2]
-#     gen5 = df5['cg_avg_data_test'][Table_index1:Table_index2]
-#     spec5 = df5['cs_avg_data_test'][Table_index1:Table_index2]
-#
-#     print("--------------- SUBSET Fashion-MNIST RESULTS --------------")
-#
-#     print("CDKT Rep KL-N glob:", np.median(glob1))
-#     print("CDKT Rep KL-N gen:", np.median(gen1))
-#     print("CDKT Rep KL-N spec:", np.median(spec1))
-#     print("CDKT Rep KL-N personalized:", (np.median(spec1) + np.median(gen1)) / 2)
-#
-#     print("CDKT Rep Full KL-N glob:", np.median(glob2))
-#     print("CDKT Rep Full KL-N gen:", np.median(gen2))
-#     print("CDKT Rep Full KL-N spec:", np.median(spec2))
-#     print("CDKT Rep Full KL-N personalized:", (np.median(spec2) + np.median(gen2)) / 2)
-#
-#     print("CDKT Full KL-N glob:", np.median(glob3))
-#     print("CDKT Full KL-N gen:", np.median(gen3))
-#     print("CDKT Full KL-N spec:", np.median(spec3))
-#     print("CDKT Full KL-N personalized:", (np.median(spec3) + np.median(gen3)) / 2)
-#
-#     print("fedavg glob:", np.median(glob4))
-#     print("fedavg gen:", np.median(gen4))
-#     print("fedavg spec:", np.median(spec4))
-#     print("fedavg personalized:", (np.median(spec4) + np.median(gen4)) / 2)
-#
-#     print("CDKT no transfer glob:", np.median(glob5))
-#     print("CDKT no transfer gen:", np.median(gen5))
-#     print("CDKT no transfer spec:", np.median(spec5))
-#     print("CDKT no transfer personalized:", (np.median(spec5) + np.median(gen5)) / 2)
-#
-#
-#     # print(glob1)
-#     # print(gen1)
-#     # stop4 = df['stop4'][:]
-#     # rs_Objs = df['rs_Objs'][:]
-#     # print("Avg BCD:",np.average(stop1))
-#     # print("glob perf:", np.median(glob1))
-#     # print("gen perf:", np.median(gen1))
-#     # print("Avg JP-miADMM ES:", np.median(stop4))
-#     # print("Obj1:",rs_Objs[:,1])
-#     # print("Obj2:", rs_Objs[:, 2])
-#     # print("Obj_ratio:", np.average(rs_Objs[:, 2] / rs_Objs[:, 0]) * 100)
-#     #
-#     # data = np.concatenate((gen,glob), axis=1)
-#     data = np.concatenate((glob1[np.newaxis, :], glob2[np.newaxis, :], glob3[np.newaxis, :], glob4[np.newaxis, :],
-#                            gen1[np.newaxis, :], gen2[np.newaxis, :], gen3[np.newaxis, :], gen4[np.newaxis, :]), axis=0)
-#     # print(data.transpose())
-#     iters_cols = ['(Rep+KL-N)\nGlobal','(RepFull+KL-N)\nGlobal','(Full+KL-N)\nGlobal','FedAvg\nGlobal',
-#                   '(Rep+KL-N)\nC-Gen','(RepFull+KL-N)\nC-Gen','(Full+KL-N)\nC-Gen','FedAvg\nC-Gen']
-#     # data = np.concatenate((stop1, stop3), axis=1)
-#     # iters_cols =['Centralized','Decentralized']
-#     df_iters = pd.DataFrame(data.transpose()*100, columns=iters_cols)
-#     df_iters = pd.melt(df_iters, var_name='Algorithm', value_name='Accuracy')
-#     # print(df_iters)
-#     return df_iters
+def read_files3():
+    directory = "./results_fig/"
+    df = h5py.File(os.path.join(directory, 'FedEKD_ur_fall_LAB_TA_I100_Maacce_Mbrgb_alpha3_eta0.02_beta9_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df2 = h5py.File(os.path.join(directory, 'FedEKD_ur_fall_LAB_TB_I100_Maacce_Mbrgb_alpha3_eta0.02_beta5_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df3 = h5py.File(os.path.join(directory, 'FedEKD_ur_fall_LAB_TA_I100_Maacce_Mbdepth_alpha3_eta0.02_beta5_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df4 = h5py.File(os.path.join(directory, 'FedEKD_ur_fall_LAB_TB_I100_Maacce_Mbdepth_alpha3_eta0.02_beta5_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df5 = h5py.File(os.path.join(directory, 'FedEKD_ur_fall_LAB_TA_I100_Margb_Mbdepth_alpha3_eta0.02_beta1_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df6 = h5py.File(os.path.join(directory, 'FedEKD_ur_fall_LAB_TB_I100_Margb_Mbdepth_alpha3_eta0.02_beta3_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    # stop1 = df['stop1'][:]
+
+    # glob1 = df['root_test'][Start_index:]
+    # gen1 = df['cg_avg_data_test'][Start_index:]
+    # glob2 = df2['root_test'][Start_index:]
+    # gen2 = df2['cg_avg_data_test'][Start_index:]
+    # glob3 = df3['root_test'][Start_index:]
+    # gen3 = df3['cg_avg_data_test'][Start_index:]
+    # glob4 = df4['root_test'][Start_index:]
+    # gen4 = df4['cg_avg_data_test'][Start_index:]
+
+
+    glob1 = df['root_test'][Table_index1:Table_index2]
+    glob2 = df2['root_test'][Table_index1:Table_index2]
+    glob3 = df3['root_test'][Table_index1:Table_index2]
+    glob4 = df4['root_test'][Table_index1:Table_index2]
+    glob5 = df5['root_test'][Table_index1:Table_index2]
+    glob6 = df6['root_test'][Table_index1:Table_index2]
+
+    print("--------------- SUBSET UR-FALL Project Results --------------")
+
+    print("---------------ACCE-RGB --------------")
+
+    print("FedEKD Acce:", np.median(glob1))
+    print("FedEKD Rgb:", np.median(glob2))
+
+    print("---------------ACCE-DEPTH --------------")
+
+    print("FedEKD Acce", np.median(glob3))
+    print("FedEKD Depth:", np.median(glob4))
+
+    print("---------------RGB-DEPTH --------------")
+
+    print("FedEKD Rgb:", np.median(glob5))
+    print("FedEKD Depth:", np.median(glob6))
+
+
+    # print(glob1)
+    # print(gen1)
+    # stop4 = df['stop4'][:]
+    # rs_Objs = df['rs_Objs'][:]
+    # print("Avg BCD:",np.average(stop1))
+    # print("glob perf:", np.median(glob1))
+    # print("gen perf:", np.median(gen1))
+    # print("Avg JP-miADMM ES:", np.median(stop4))
+    # print("Obj1:",rs_Objs[:,1])
+    # print("Obj2:", rs_Objs[:, 2])
+    # print("Obj_ratio:", np.average(rs_Objs[:, 2] / rs_Objs[:, 0]) * 100)
+    #
+    # data = np.concatenate((gen,glob), axis=1)
+    data = np.concatenate((glob1[np.newaxis, :], glob2[np.newaxis, :], glob3[np.newaxis, :], glob4[np.newaxis, :],
+                        ), axis=0)
+    # print(data.transpose())
+    iters_cols = ['(Rep+KL-N)\nGlobal','(RepFull+KL-N)\nGlobal','(Full+KL-N)\nGlobal','FedAvg\nGlobal']
+    # data = np.concatenate((stop1, stop3), axis=1)
+    # iters_cols =['Centralized','Decentralized']
+    df_iters = pd.DataFrame(data.transpose()*100, columns=iters_cols)
+    df_iters = pd.melt(df_iters, var_name='Algorithm', value_name='Accuracy')
+    # print(df_iters)
+    return df_iters
+def read_files4():
+    directory = "./results_fig/"
+    df = h5py.File(os.path.join(directory, 'FedEKD_mhealth_LAB_TA_I100_Maacce_Mbgyro_alpha1_eta0.02_beta1_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df2 = h5py.File(os.path.join(directory, 'FedEKD_mhealth_LAB_TB_I100_Maacce_Mbgyro_alpha1_eta0.02_beta1_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df3 = h5py.File(os.path.join(directory, 'FedEKD_mhealth_LAB_TA_I100_Maacce_Mbmage_alpha3_eta0.02_beta1_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df4 = h5py.File(os.path.join(directory, 'FedEKD_mhealth_LAB_TB_I100_Maacce_Mbmage_alpha3_eta0.02_beta1_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df5 = h5py.File(os.path.join(directory, 'FedEKD_mhealth_LAB_TA_I100_Magyro_Mbmage_alpha3_eta0.02_beta1_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    df6 = h5py.File(os.path.join(directory, 'FedEKD_mhealth_LAB_TB_I100_Magyro_Mbmage_alpha3_eta0.02_beta1_gamma0.03_SSTrue_gmKL_lmKL_ratio0.11_depoch2_onelayerFalse_globalclsDrTrue_publicratio1.h5'), 'r')
+    # stop1 = df['stop1'][:]
+
+    # glob1 = df['root_test'][Start_index:]
+    # gen1 = df['cg_avg_data_test'][Start_index:]
+    # glob2 = df2['root_test'][Start_index:]
+    # gen2 = df2['cg_avg_data_test'][Start_index:]
+    # glob3 = df3['root_test'][Start_index:]
+    # gen3 = df3['cg_avg_data_test'][Start_index:]
+    # glob4 = df4['root_test'][Start_index:]
+    # gen4 = df4['cg_avg_data_test'][Start_index:]
+
+
+    glob1 = df['root_test'][Table_index1:Table_index2]
+    glob2 = df2['root_test'][Table_index1:Table_index2]
+    glob3 = df3['root_test'][Table_index1:Table_index2]
+    glob4 = df4['root_test'][Table_index1:Table_index2]
+    glob5 = df5['root_test'][Table_index1:Table_index2]
+    glob6 = df6['root_test'][Table_index1:Table_index2]
+
+    print("--------------- SUBSET mHealth Project Results --------------")
+
+    print("---------------ACCE-GYRO --------------")
+
+    print("FedEKD Acce:", np.median(glob1))
+    print("FedEKD GYRO:", np.median(glob2))
+
+    print("---------------ACCE-MAGE --------------")
+
+    print("FedEKD Acce", np.median(glob3))
+    print("FedEKD MAGE:", np.median(glob4))
+
+    print("---------------GYRO-MAGE --------------")
+
+    print("FedEKD GYRO :", np.median(glob5))
+    print("FedEKD MAGE:", np.median(glob6))
+
+
+    # print(glob1)
+    # print(gen1)
+    # stop4 = df['stop4'][:]
+    # rs_Objs = df['rs_Objs'][:]
+    # print("Avg BCD:",np.average(stop1))
+    # print("glob perf:", np.median(glob1))
+    # print("gen perf:", np.median(gen1))
+    # print("Avg JP-miADMM ES:", np.median(stop4))
+    # print("Obj1:",rs_Objs[:,1])
+    # print("Obj2:", rs_Objs[:, 2])
+    # print("Obj_ratio:", np.average(rs_Objs[:, 2] / rs_Objs[:, 0]) * 100)
+    #
+    # data = np.concatenate((gen,glob), axis=1)
+    data = np.concatenate((glob1[np.newaxis, :], glob2[np.newaxis, :], glob3[np.newaxis, :], glob4[np.newaxis, :],
+                        ), axis=0)
+    # print(data.transpose())
+    iters_cols = ['(Rep+KL-N)\nGlobal','(RepFull+KL-N)\nGlobal','(Full+KL-N)\nGlobal','FedAvg\nGlobal']
+    # data = np.concatenate((stop1, stop3), axis=1)
+    # iters_cols =['Centralized','Decentralized']
+    df_iters = pd.DataFrame(data.transpose()*100, columns=iters_cols)
+    df_iters = pd.melt(df_iters, var_name='Algorithm', value_name='Accuracy')
+    # print(df_iters)
+    return df_iters
 # def read_files4():
 #     directory = "./results_fig/"
 #     df = h5py.File(os.path.join(directory, 'CDKT_Cifar10_I100_sTrue_fFalse_a0.02_b0.25_RFFalse_SSFalse_accFalse_gmKL_lmNorm2.h5'), 'r')

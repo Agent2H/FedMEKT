@@ -1,5 +1,6 @@
 import copy
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,9 +19,9 @@ from utils.model_utils import read_data, read_user_data, read_public_data, make_
 from Setting import *
 
 class userMultimodalRep(User):
-    def __init__(self, device, client_train_idx, client_train, public_data, model, model_server,  modality, batch_size, learning_rate,
+    def __init__(self, device, client_train_idx, client_train, public_data, model, model_server,embedding_layer,embedding_layer1,  modality, batch_size, learning_rate,
                  beta, local_epochs, optimizer):
-        super().__init__(device, client_train_idx, client_train,public_data, model[0], model_server[0],  modality, batch_size,
+        super().__init__(device, client_train_idx, client_train,public_data, model[0], model_server[0], embedding_layer[0],embedding_layer1[0], modality, batch_size,
                          learning_rate, beta, local_epochs)
 
         # if(model[1] == "Mclr_CrossEntropy"):
@@ -238,32 +239,54 @@ class userMultimodalRep(User):
                     elif self.modality == "AB":
                         # Train with input of modality A and output of modalities A&B
                         # print("doing here")
+                        # repA, repA1 = self.model.encode(seq_A_public, "A")
+                        # repB, repB1 = self.model.encode(seq_B_public, "B")
+                        # gen_repA, gen_repA1 = gen_model.encode(seq_A_public, "A")
+                        # gen_repB, gen_repB1 = gen_model.encode(seq_B_public, "B")
+                        #
+                        # embedding_knowledge_global=np.concatenate((gen_repA.argmax(1).cpu().numpy(),gen_repB.argmax(1).cpu().numpy()), axis=1)
+                        # embedding_knowledge_local= np.concatenate((repA.argmax(1).cpu().numpy(),repB.argmax(1).cpu().numpy()), axis=1)
+                        # embedding_knowledge_local_update=torch.from_numpy(embedding_knowledge_local).double().to(self.device)
+                        # embedding_knowledge_global_update = torch.from_numpy(embedding_knowledge_global).double().to(self.device)
+                        # embedding_knowledge_global1 = np.concatenate((gen_repA1.argmax(1).cpu().numpy(), gen_repB1.argmax(1).cpu().numpy()), axis=1)
+                        # embedding_knowledge_local1 = np.concatenate((repA1.argmax(1).cpu().numpy(), repB1.argmax(1).cpu().numpy()), axis=1)
+                        # embedding_knowledge_local1_update = torch.from_numpy(embedding_knowledge_local1).double().to(self.device)
+                        # embedding_knowledge_global1_update = torch.from_numpy(embedding_knowledge_global1).double().to(self.device)
+                        # print('size of knowledge',np.size(embedding_knowledge_global))
                         self.freeze(self.model.encoder_B)
                         output_A, output_B = self.model(seq_A, "A")
-                        output_A_public, output_B_public = self.model(seq_A_public, "A")
+
                         repA_public, repA_public1 = self.model.encode(seq_A_public,"A")
                         gen_repA_public, gen_repA_public1 = gen_model.encode(seq_A_public,"A")
                         repA_public_prev, repA_public1_prev = prev_model.encode(seq_A_public,"A")
+                        # repA_public= self.model.encode(seq_A_public, "A")
+                        # gen_repA_public= gen_model.encode(seq_A_public, "A")
+                        # repA_public_prev= prev_model.encode(seq_A_public, "A")
+                        embedding_knowledge_local = self.embedding_layer(repA_public)
+                        embedding_knowledge_global = self.embedding_layer(gen_repA_public)
                         #Contrastive loss calculation
                         positive = torch.mean(self.cos(repA_public,gen_repA_public)/self.temperature)
                         negative = torch.mean(self.cos(repA_public,repA_public_prev)/self.temperature)
                         loss_con = -torch.log(torch.exp(positive)/(torch.exp(positive)+torch.exp(negative)))
-                        positive1 = torch.mean(self.cos(repA_public1, gen_repA_public1) / self.temperature)
-                        negative1 = torch.mean(self.cos(repA_public1, repA_public1_prev) / self.temperature)
-                        loss_con1 = -torch.log(torch.exp(positive1) / (torch.exp(positive1) + torch.exp(negative1)))
+                        # positive1 = torch.mean(self.cos(repA_public1, gen_repA_public1) / self.temperature)
+                        # negative1 = torch.mean(self.cos(repA_public1, repA_public1_prev) / self.temperature)
+                        # loss_con1 = -torch.log(torch.exp(positive1) / (torch.exp(positive1) + torch.exp(negative1)))
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
-                        loss_A_proxy = self.criterion_MSE(output_A_public, seq_A_public[:, inv_idx_public, :])
-                        loss_B_proxy = self.criterion_MSE(output_B_public, seq_B_public[:, inv_idx_public, :])
+                        # loss_A_proxy = self.criterion_MSE(output_A_public, seq_A_public[:, inv_idx_public, :])
+                        # loss_B_proxy = self.criterion_MSE(output_B_public, seq_B_public[:, inv_idx_public, :])
+
                         lossKD = self.criterion_KL(repA_public, gen_repA_public)
+
                         lossKD1 = self.criterion_KL(repA_public1, gen_repA_public1)
+                        # lossKD = self.criterion_KL(embedding_knowledge_local, embedding_knowledge_global)
                         norm2loss = torch.dist(repA_public, gen_repA_public, p=2)
-                        norm2loss1 = torch.dist(repA_public1, gen_repA_public1, p=2)
+                        # norm2loss1 = torch.dist(repA_public1, gen_repA_public1, p=2)
                         lossJSD = self.criterion_JSD(repA_public, gen_repA_public)
-                        lossJSD1 = self.criterion_JSD(repA_public1, gen_repA_public1)
+                        # lossJSD1 = self.criterion_JSD(repA_public1, gen_repA_public1)
                         lossSim = self.cos(repA_public, gen_repA_public)
-                        lossSim1= self.cos(repA_public1,gen_repA_public1)
-                        lossTrueproxy= loss_A_proxy+loss_B_proxy
+                        # lossSim1= self.cos(repA_public1,gen_repA_public1)
+                        # lossTrueproxy= loss_A_proxy+loss_B_proxy
                         lossTrue = loss_A + loss_B
                         ReconstructionLoss.append(lossTrue.item())
 
@@ -275,7 +298,8 @@ class userMultimodalRep(User):
                                 loss = lossTrue + alpha * lossKD +  beta*lossKD1
                             # loss = lossTrue + alpha * lossKD + beta * lossKD1+ lamda*lossTrueproxy
 
-                            Knowledge_Transfer_Loss.append(lossKD1.item())
+                            # Knowledge_Transfer_Loss.append(lossKD1.item())
+                            Knowledge_Transfer_Loss.append(lossKD.item())
                         elif Local_CDKT_metric == "Norm2":
                             # loss = lossTrue + alpha * (norm2loss +  norm2loss1)
                             # loss = lossTrue + alpha * norm2loss + beta*norm2loss1
@@ -310,26 +334,34 @@ class userMultimodalRep(User):
                         repB_public, repB_public1 = self.model.encode(seq_B_public, "B")
                         gen_repB_public, gen_repB_public1 = gen_model.encode(seq_B_public, "B")
                         repB_public_prev, repB_public1_prev = prev_model.encode(seq_B_public, "B")
+                        # repB_public= self.model.encode(seq_B_public, "B")
+                        # gen_repB_public= gen_model.encode(seq_B_public, "B")
+                        # repB_public_prev= prev_model.encode(seq_B_public, "B")
+                        embedding_knowledge_local = self.embedding_layer(repB_public)
+                        embedding_knowledge_global = self.embedding_layer(gen_repB_public)
+
                         # Contrastive loss calculation
                         positive = torch.mean(self.cos(repB_public, gen_repB_public) / self.temperature)
                         negative = torch.mean(self.cos(repB_public, repB_public_prev) / self.temperature)
                         loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
-                        positive1 = torch.mean(self.cos(repB_public1, gen_repB_public1) / self.temperature)
-                        negative1 = torch.mean(self.cos(repB_public1, repB_public1_prev) / self.temperature)
-                        loss_con1 = -torch.log(torch.exp(positive1) / (torch.exp(positive1) + torch.exp(negative1)))
+                        # positive1 = torch.mean(self.cos(repB_public1, gen_repB_public1) / self.temperature)
+                        # negative1 = torch.mean(self.cos(repB_public1, repB_public1_prev) / self.temperature)
+                        # loss_con1 = -torch.log(torch.exp(positive1) / (torch.exp(positive1) + torch.exp(negative1)))
                         # Loss function
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
                         loss_A_proxy = self.criterion_MSE(output_A_public, seq_A_public[:, inv_idx_public, :])
                         loss_B_proxy = self.criterion_MSE(output_B_public, seq_B_public[:, inv_idx_public, :])
+                        # lossKD = self.criterion_KL(embedding_knowledge_local, embedding_knowledge_global)
                         lossKD = self.criterion_KL(repB_public, gen_repB_public)
                         lossKD1 = self.criterion_KL(repB_public1, gen_repB_public1)
+
                         norm2loss = torch.dist(repB_public, gen_repB_public, p=2)
-                        norm2loss1 = torch.dist(repB_public1, gen_repB_public1, p=2)
+                        # norm2loss1 = torch.dist(repB_public1, gen_repB_public1, p=2)
                         lossJSD = self.criterion_JSD(repB_public, gen_repB_public)
-                        lossJSD1 = self.criterion_JSD(repB_public1, gen_repB_public1)
+                        # lossJSD1 = self.criterion_JSD(repB_public1, gen_repB_public1)
                         lossSim = self.cos(repB_public, gen_repB_public)
-                        lossSim1 = self.cos(repB_public1, gen_repB_public1)
+                        # lossSim1 = self.cos(repB_public1, gen_repB_public1)
                         lossTrueproxy = loss_A_proxy + loss_B_proxy
                         lossTrue = loss_A + loss_B
                         ReconstructionLoss.append(lossTrue.item())
@@ -341,7 +373,8 @@ class userMultimodalRep(User):
                                 loss = lossTrue + alpha * lossKD + beta * lossKD1
                             # loss = lossTrue + alpha * lossKD + beta * lossKD1+ lamda*lossTrueproxy
                             # loss = lossTrue + beta * lossKD1
-                            Knowledge_Transfer_Loss.append(lossKD1.item())
+                            # Knowledge_Transfer_Loss.append(lossKD1.item())
+                            Knowledge_Transfer_Loss.append(lossKD.item())
                         elif Local_CDKT_metric == "Norm2":
                             # loss = lossTrue + alpha * (norm2loss +  norm2loss1)
                             # loss = lossTrue + alpha * norm2loss + beta * norm2loss1
@@ -352,16 +385,16 @@ class userMultimodalRep(User):
                             # loss = lossTrue + alpha * lossJSD + beta * lossJSD1
                             loss = lossTrue + beta * lossJSD1
                             Knowledge_Transfer_Loss.append(lossJSD1.item())
-                        elif Local_CDKT_metric == "Cos":
-                            # loss = lossTrue - alpha *(lossSim.mean() + lossSim1.mean())
-                            loss = lossTrue + alpha * lossSim.mean() + beta * lossSim1.mean()
-                            # loss = lossTrue - beta * lossSim1.mean()
-                            Knowledge_Transfer_Loss.append(lossSim1.mean().item())
-                        elif Local_CDKT_metric == "Con":
-                            # loss = lossTrue + alpha * (loss_con + loss_con1)
-                            loss = lossTrue + alpha * loss_con + beta * loss_con1
-                            # loss = lossTrue + beta * loss_con1
-                            Knowledge_Transfer_Loss.append(loss_con1.item())
+                        # elif Local_CDKT_metric == "Cos":
+                        #     # loss = lossTrue - alpha *(lossSim.mean() + lossSim1.mean())
+                        #     # loss = lossTrue + alpha * lossSim.mean() + beta * lossSim1.mean()
+                        #     # loss = lossTrue - beta * lossSim1.mean()
+                        #     Knowledge_Transfer_Loss.append(lossSim1.mean().item())
+                        # elif Local_CDKT_metric == "Con":
+                        #     # loss = lossTrue + alpha * (loss_con + loss_con1)
+                        #     loss = lossTrue + alpha * loss_con + beta * loss_con1
+                        #     # loss = lossTrue + beta * loss_con1
+                        #     Knowledge_Transfer_Loss.append(loss_con1.item())
                         loss.backward()
                         self.optimizer.step()
                         if torch.cuda.is_available():
@@ -528,7 +561,8 @@ class userMultimodalRep(User):
                     y = y_A_train[:, idx_start:idx_end]
 
                     with torch.no_grad():
-                        rpts, _ = self.model.encode(seq, "A")
+                        rpts, _= self.model.encode(seq, "A")
+                        # rpts= self.model.encode(seq, "A")
                     targets = torch.from_numpy(y.flatten()).to(self.device)
                     self.optimizer_local_classifier.zero_grad()
                     # print("representation size is",rpts.size())
@@ -559,6 +593,7 @@ class userMultimodalRep(User):
 
                     with torch.no_grad():
                         rpts, _ = self.model.encode(seq, "B")
+                        # rpts= self.model.encode(seq, "B")
                     targets = torch.from_numpy(y.flatten()).to(self.device)
                     self.optimizer_local_classifier.zero_grad()
                     output = self.model_server(rpts)

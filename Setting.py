@@ -18,10 +18,10 @@ PLOT_PATH_FIG="./figs/"
 data_path = "./data/"
 #Dataset selection
 DATASETS= ["mhealth","opp","ur_fall"]
-DATASET = DATASETS[2]
+DATASET = DATASETS[1]
 #Algorithm selection
-RUNNING_ALGS = ["mmFedAvg","FedMEKT"]
-RUNNING_ALG = RUNNING_ALGS[1]
+RUNNING_ALGS = ["mmFedAvg","mmFedProx","FedMEKT","FedEKD","FedMEFKT"]
+RUNNING_ALG = RUNNING_ALGS[4]
 
 #Model selection
 models=["split_LSTM","DCCAE_LSTM"]
@@ -35,10 +35,11 @@ PUBLIC_RATIO=1
 #Algorithm Parameter
 Num_neurons=32
 ALPHA = 100
-alpha =0.07#trade-of parameter of local training loss
-beta= 0.03#trade-off parameter of global distillation loss (Mnist:rep+full loss 0.2)
-eta = 0.07
-gamma=0.03
+alpha =0.1#trade-of parameter of local training loss
+beta= 0.009#trade-off parameter of global distillation loss (Mnist:rep+full loss 0.2)
+eta = 0.1
+gamma=0.009
+
 lamda = 1
 sigma= 0.02
 
@@ -47,12 +48,12 @@ train_supervised_ratio =0.11
 DCCAE_lamda = 0.01
 
 local_learning_rate = 0.001
-local_classifier_learning_rate=0.005
-global_learning_rate = 0.001
+local_classifier_learning_rate=0.002
+global_learning_rate = 0.002
 global_ae_learning_rate = 0.001
 global_ae_distill_epoch= 2
 global_generalized_epochs = 5
-local_classifier_epochs=3
+local_classifier_epochs=2
 LOCAL_EPOCH = 2
 NUM_GLOBAL_ITERS = 100# Number of global rounds
 
@@ -65,7 +66,7 @@ NUM_CLIENT_AB= 30
 
 #Modality Setting
 test_modalities=["A","B"]
-test_modality=test_modalities[0]
+test_modality=test_modalities[1]
 label_modalities = ["A","B","AB"]
 label_modality = label_modalities[2]
 modality_opp=["acce","gyro"]

@@ -15,7 +15,10 @@ from FLAlgorithms.servers.serverlocal import FedLocal
 from FLAlgorithms.servers.serverglobal import FedGlobal
 from FLAlgorithms.servers.serverCDKT import CDKT
 from FLAlgorithms.servers.serverMultimodalFedAvg import MultimodalFedAvg
+from FLAlgorithms.servers.serverMultimodalFedProx import MultimodalFedProx
+from FLAlgorithms.servers.serverMultimodalFedEKD import MultimodalFedEKD
 from FLAlgorithms.servers.serverFedMEKT import MultimodalRep
+from FLAlgorithms.servers.serverFedMEKT1 import MultimodalRepFusion
 from utils.model_utils import read_data, load_data, split_server_train
 from FLAlgorithms.trainmodel.ae_model import *
 from utils.plot_utils import *
@@ -30,7 +33,7 @@ from utils.options import args_parser
 #python CDKT_main.py --dataset Mnist --model cnn --learning_rate 0.03 --num_global_iters 200  --algorithm --times 1 --subusers 1
 
 # Create an experiment with your api key:
-def main(experiment, dataset, algorithm, model, model_server,  batch_size, learning_rate, num_glob_iters,
+def main(experiment, dataset, algorithm, model, model_server, embedding_layer, embedding_layer1, batch_size, learning_rate, num_glob_iters,
          local_epochs, optimizer, numusers, K, personal_learning_rate, times, commet, gpu, cutoff, args):
 
     # print torch.device()
@@ -53,7 +56,7 @@ def main(experiment, dataset, algorithm, model, model_server,  batch_size, learn
     input_size_A = train_A["A"].shape[1]
     input_size_B = train_B["B"].shape[1]
     n_classes = len(set(train_A["y"]))
-    print("rep size is", rep_size)
+    # print("rep size is", rep_size)
     for i in range(times):
         print("---------------Running time:------------",i)
         # Generate model
@@ -62,6 +65,7 @@ def main(experiment, dataset, algorithm, model, model_server,  batch_size, learn
                     # model = SplitLSTMAutoEncoder(input_size_A, input_size_B, rep_size).double().to(device), model
                     # model = SplitLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
                     model = SplitLSTMAutoEncoder2(input_size_A, input_size_B, rep_size).double().to(device), model
+                    # print("model is",model)
         elif (model == "DCCAE_LSTM"):
                     model = DCCLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
 
@@ -71,7 +75,10 @@ def main(experiment, dataset, algorithm, model, model_server,  batch_size, learn
                     else:
                         model_server = MLP(rep_size, n_classes).double().to(device), model_server
                         # model_server = MLP(Num_neurons, n_classes).double().to(device), model_server
-
+        if embedding_layer=="Dense":
+            embedding_layer = Dense(rep_size).double().to(device), embedding_layer
+        if embedding_layer1 == "Dense1":
+            embedding_layer1 = Dense1(Num_neurons).double().to(device), embedding_layer1
 
         # select algorithm
 
@@ -79,15 +86,41 @@ def main(experiment, dataset, algorithm, model, model_server,  batch_size, learn
             if (commet):
                 experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
                     learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
-            server = MultimodalFedAvg(train_A,train_B, experiment, device, data, algorithm, model,  model_server,  batch_size, learning_rate,
+            server = MultimodalFedAvg(train_A,train_B, experiment, device, data, algorithm, model,  model_server, embedding_layer,embedding_layer1, batch_size, learning_rate,
                           num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
+
+        elif (algorithm == "mmFedProx"):
+            if (commet):
+                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
+                    learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
+            server = MultimodalFedProx(train_A, train_B, experiment, device, data, algorithm, model, model_server,
+                                      embedding_layer, embedding_layer1, batch_size, learning_rate,
+                                      num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
 
         elif (algorithm == "FedMEKT"):
             if (commet):
                 experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
                     learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
-            server = MultimodalRep(train_A, train_B, experiment, device, data, algorithm, model, model_server,
+            server = MultimodalRep(train_A, train_B, experiment, device, data, algorithm, model, model_server, embedding_layer,embedding_layer1,
                                       batch_size, learning_rate, num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
+        elif (algorithm == "FedMEFKT"):
+            if (commet):
+                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
+                    learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
+            server = MultimodalRepFusion(train_A, train_B, experiment, device, data, algorithm, model, model_server,
+                                   embedding_layer, embedding_layer1,
+                                   batch_size, learning_rate, num_glob_iters, local_epochs, optimizer, numusers, i,
+                                   cutoff, args)
+        elif (algorithm == "FedEKD"):
+            if (commet):
+                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
+                    learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
+            server = MultimodalFedEKD(train_A, train_B, experiment, device, data, algorithm, model, model_server,
+                                   embedding_layer, embedding_layer1,
+                                   batch_size, learning_rate, num_glob_iters, local_epochs, optimizer, numusers, i,
+                                   cutoff, args)
+
+
 
         else:
             print("Algorithm is invalid")
@@ -153,6 +186,8 @@ if __name__ == "__main__":
         algorithm = args.algorithm,
         model=args.model,
         model_server=args.model_server,
+        embedding_layer=args.embedding_layer,
+        embedding_layer1=args.embedding_layer1,
         # server_model=args.server_model,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,

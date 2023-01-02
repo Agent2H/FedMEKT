@@ -3,7 +3,7 @@ import os
 import torch.multiprocessing as mp
 from tqdm import tqdm
 import torch.nn as nn
-from FLAlgorithms.users.userMultimodalFedAvg import UserMultimodalFedAvg
+from FLAlgorithms.users.userMultimodalFedProx import UserMultimodalFedProx
 from FLAlgorithms.users.userbase_dem import User
 from FLAlgorithms.servers.serverbase_dem import Dem_Server
 from Setting import rs_file_path, N_clients
@@ -19,7 +19,7 @@ from utils.train_utils import KL_Loss, JSD
 from Setting import *
 from torch import nn, optim
 from sklearn.metrics import f1_score
-class MultimodalFedAvg(Dem_Server):
+class MultimodalFedProx(Dem_Server):
     def __init__(self, train_A, train_B, experiment, device, dataset, algorithm, model, model_server,embedding_layer,embedding_layer1, batch_size, learning_rate,
                   num_glob_iters, local_epochs, optimizer, num_users, times, cutoff, args):
         super().__init__(train_A, train_B, experiment, device, dataset, algorithm, model[0],model_server[0],embedding_layer[0],embedding_layer1[0],  batch_size, learning_rate,
@@ -73,7 +73,7 @@ class MultimodalFedAvg(Dem_Server):
             # if (self.sub_data):
             #     if (i in randomList):
             #         train, test = self.get_data(train, test)
-            user = UserMultimodalFedAvg(device, id[i], client_train, public_data, model,  modalities[i], batch_size, learning_rate, beta,
+            user = UserMultimodalFedProx(device, id[i], client_train, public_data, model,  modalities[i], batch_size, learning_rate, beta,
                             local_epochs, optimizer)
 
             self.users.append(user)
@@ -330,7 +330,7 @@ class MultimodalFedAvg(Dem_Server):
             local_f1_accuracy = []
             for user in self.selected_users:
 
-                    rec=user.train_ae(self.local_epochs)
+                    rec=user.train_ae(self.local_epochs,self.model)
                     reconstruction_loss.append(rec)
             # print("model server",self.model.state_dict())
 

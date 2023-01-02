@@ -9,7 +9,7 @@ import copy
 # from Setting import *
 
 class Server:
-    def __init__(self, train_A, train_B, experiment, device, dataset,algorithm, model, model_server, batch_size, learning_rate ,
+    def __init__(self, train_A, train_B, experiment, device, dataset,algorithm, model, model_server, embedding_layer,embedding_layer1,batch_size, learning_rate ,
                  num_glob_iters, local_epochs, optimizer,num_users, times,args):
 
         # Set up the main attributes
@@ -23,6 +23,8 @@ class Server:
         self.model = copy.deepcopy(model)
         # self.client_model = copy.deepcopy(client_model)
         self.model_server = copy.deepcopy(model_server)
+        self.embedding_layer = copy.deepcopy(embedding_layer)
+        self.embedding_layer1 = copy.deepcopy(embedding_layer1)
         self.users = []
         self.selected_users = []
         self.num_users = num_users
