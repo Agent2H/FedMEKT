@@ -25,7 +25,7 @@ Running Instruction
 
 **To run the code, use the command in terminal**:
 ```
-python MultimodalRep_main.py
+python FedMEKT_main.py
 ```
 
 
