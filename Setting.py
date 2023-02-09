@@ -18,10 +18,10 @@ PLOT_PATH_FIG="./figs/"
 data_path = "./data/"
 #Dataset selection
 DATASETS= ["mhealth","opp","ur_fall"]
-DATASET = DATASETS[1]
+DATASET = DATASETS[0]
 #Algorithm selection
-RUNNING_ALGS = ["mmFedAvg","mmFedProx","FedMEKT","FedEKD","FedMEFKT"]
-RUNNING_ALG = RUNNING_ALGS[4]
+RUNNING_ALGS = ["mmFedAvg","mmFedProx","mmMOON","FedMEKT","FedEKD","FedMEFKT"]
+RUNNING_ALG = RUNNING_ALGS[5]
 
 #Model selection
 models=["split_LSTM","DCCAE_LSTM"]
@@ -33,13 +33,14 @@ Local_CDKT_metric = CDKT_metrics[0]    # Local distance metric
 
 PUBLIC_RATIO=1
 #Algorithm Parameter
-Num_neurons=32
+Num_neurons=24
 ALPHA = 100
-alpha =0.1#trade-of parameter of local training loss
-beta= 0.009#trade-off parameter of global distillation loss (Mnist:rep+full loss 0.2)
-eta = 0.1
-gamma=0.009
-
+alpha =0.05#trade-of parameter of local traininadg loss
+beta= 0.03#trade-off parameter of global distillation loss (Mnist:rep+full loss 0.2)
+eta = 0.05
+gamma=0.03
+mu=0.1#contrastive hyperparameter
+muy=0.001# mmFedProx hyperparameter
 lamda = 1
 sigma= 0.02
 
@@ -48,10 +49,10 @@ train_supervised_ratio =0.11
 DCCAE_lamda = 0.01
 
 local_learning_rate = 0.001
-local_classifier_learning_rate=0.002
-global_learning_rate = 0.002
+local_classifier_learning_rate=0.001
+global_learning_rate = 0.001
 global_ae_learning_rate = 0.001
-global_ae_distill_epoch= 2
+global_ae_distill_epoch= 1
 global_generalized_epochs = 5
 local_classifier_epochs=2
 LOCAL_EPOCH = 2

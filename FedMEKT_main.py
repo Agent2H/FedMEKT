@@ -8,6 +8,7 @@ import importlib
 import random
 import os
 # from FLAlgorithms.servers.serveravg import FedAvg
+from FLAlgorithms.servers.serverMultimodalMoon import MultimodalMoon
 from FLAlgorithms.servers.serverpFedMe import pFedMe
 from FLAlgorithms.servers.serverperavg import PerAvg
 from FLAlgorithms.servers.serverFedU import FedU
@@ -96,6 +97,13 @@ def main(experiment, dataset, algorithm, model, model_server, embedding_layer, e
             server = MultimodalFedProx(train_A, train_B, experiment, device, data, algorithm, model, model_server,
                                       embedding_layer, embedding_layer1, batch_size, learning_rate,
                                       num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
+        elif (algorithm == "mmMOON"):
+            if (commet):
+                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
+                    learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
+            server = MultimodalMoon(train_A, train_B, experiment, device, data, algorithm, model, model_server,
+                                       embedding_layer, embedding_layer1, batch_size, learning_rate,
+                                       num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
 
         elif (algorithm == "FedMEKT"):
             if (commet):

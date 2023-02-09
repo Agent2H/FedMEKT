@@ -18,7 +18,7 @@ from utils.model_utils import read_data, read_user_data, read_public_data, make_
 from Setting import *
 
 
-class UserMultimodalFedProx(User):
+class UserMultimodalMoon(User):
     def __init__(self, device, client_train_idx, client_train,public_data, model,  modality, batch_size, learning_rate,
                  beta, local_epochs, optimizer):
         super().__init__(device, client_train_idx, client_train,public_data, model[0],  modality, batch_size,
@@ -37,7 +37,8 @@ class UserMultimodalFedProx(User):
         self.rep_size = rep_size
         self.criterion_DCC = DCCLoss(self.rep_size, self.device)
         self.alpha = ALPHA
-
+        self.cos = nn.CosineSimilarity(dim=1)
+        self.temperature = 0.5
         if DATASET == "ur_fall":
             self.batch_min = 16
             self.batch_max = 32
@@ -77,12 +78,17 @@ class UserMultimodalFedProx(User):
             return 1
 
 
-    def train_ae(self, epochs,global_model):
+    def train_ae(self, epochs,global_model,pre_w):
 
         self.model.train()
+
         gen_model = copy.deepcopy(global_model)
         gen_model.eval()
         for param in gen_model.parameters():
+            param.requires_grad = False
+        pre_model = copy.deepcopy(pre_w)
+        pre_model.eval()
+        for param in pre_model.parameters():
             param.requires_grad = False
         round_loss = []
         Rec_round_loss = []
@@ -157,14 +163,19 @@ class UserMultimodalFedProx(User):
 
                         self.freeze(self.model.encoder_B)
                         output_A, output_B = self.model(seq_A, "A")
-                        proximal_termA = 0.0
-                        for w, w_t in zip(self.model.encoder_A.parameters(), gen_model.encoder_A.parameters()):
-                            proximal_termA += (w - w_t).norm(2)
+                        repA, repA1 = self.model.encode(seq_A, "A")
+                        gen_repA, gen_repA1 = gen_model.encode(seq_A, "A")
+                        repA_prev, repA1_prev = pre_model.encode(seq_A, "A")
 
 
+                        # Contrastive loss calculation
+                        positive = torch.mean(self.cos(repA, gen_repA) / self.temperature)
+                        negative = torch.mean(self.cos(repA, repA_prev) / self.temperature)
+                        loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
+                        # print("loss con is", loss_con)
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
-                        loss = loss_A + loss_B+ muy*proximal_termA
+                        loss = loss_A + loss_B+ mu*loss_con
                         ReconstructionLoss.append(loss.item())
 
                         loss.backward()
@@ -176,13 +187,17 @@ class UserMultimodalFedProx(User):
                         # Train with input of modality B and output of modalities A&B
                         self.freeze(self.model.encoder_A)
                         output_A, output_B = self.model(seq_B, "B")
-                        proximal_termB = 0.0
-                        for w, w_t in zip(self.model.encoder_B.parameters(), gen_model.encoder_B.parameters()):
-                            proximal_termB += (w - w_t).norm(2)
+                        repB, repB1 = self.model.encode(seq_B, "B")
+                        gen_repB, gen_repB1 = gen_model.encode(seq_B, "B")
+                        repB_prev, repB1_prev = pre_model.encode(seq_B, "B")
+                        # Contrastive loss calculation
+                        positive = torch.mean(self.cos(repB, gen_repB) / self.temperature)
+                        negative = torch.mean(self.cos(repB, repB_prev) / self.temperature)
+                        loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
                         loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
                         loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
 
-                        loss = loss_A + loss_B+muy*proximal_termB
+                        loss = loss_A + loss_B+mu*loss_con
                         ReconstructionLoss.append(loss.item())
                         loss.backward()
                         self.optimizer.step()
