@@ -43,6 +43,16 @@ class Server:
         self.times = times
         self.experiment = experiment
         self.sub_data = 0
+        if (args is not None):
+            if (args.mu > 0):
+                args.algorithm += "_Prox"
+                self.algorithm = args.algorithm
+
+            self.num_rounds = num_glob_iters
+            self.total_users = args.total_users
+            self.N_clients = self.total_users
+            self.selected_N_clients = int(self.num_users * self.total_users)
+            self.args = args
 
         # Initialize the server's grads to zeros
         #for param in self.model.parameters():

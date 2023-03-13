@@ -7,19 +7,11 @@ import argparse
 import importlib
 import random
 import os
-# from FLAlgorithms.servers.serveravg import FedAvg
 from FLAlgorithms.servers.serverMultimodalMoon import MultimodalMoon
-from FLAlgorithms.servers.serverpFedMe import pFedMe
-from FLAlgorithms.servers.serverperavg import PerAvg
-from FLAlgorithms.servers.serverFedU import FedU
-from FLAlgorithms.servers.serverlocal import FedLocal
-from FLAlgorithms.servers.serverglobal import FedGlobal
-from FLAlgorithms.servers.serverCDKT import CDKT
 from FLAlgorithms.servers.serverMultimodalFedAvg import MultimodalFedAvg
 from FLAlgorithms.servers.serverMultimodalFedProx import MultimodalFedProx
-from FLAlgorithms.servers.serverMultimodalFedEKD import MultimodalFedEKD
-from FLAlgorithms.servers.serverFedMEKT import MultimodalRep
-from FLAlgorithms.servers.serverFedMEKT1 import MultimodalRepFusion
+from FLAlgorithms.servers.serverFedMEKTS import MultimodalRep
+from FLAlgorithms.servers.serverFedMEKTC import MultimodalRepFusion
 from utils.model_utils import read_data, load_data, split_server_train
 from FLAlgorithms.trainmodel.ae_model import *
 from utils.plot_utils import *
@@ -62,13 +54,11 @@ def main(experiment, dataset, algorithm, model, model_server, embedding_layer, e
         print("---------------Running time:------------",i)
         # Generate model
 
-        if (model == "split_LSTM"):
+
                     # model = SplitLSTMAutoEncoder(input_size_A, input_size_B, rep_size).double().to(device), model
                     # model = SplitLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
-                    model = SplitLSTMAutoEncoder2(input_size_A, input_size_B, rep_size).double().to(device), model
-                    # print("model is",model)
-        elif (model == "DCCAE_LSTM"):
-                    model = DCCLSTMAutoEncoder_Embedding(input_size_A, input_size_B, rep_size).double().to(device), model
+        model = SplitLSTMAutoEncoder2(input_size_A, input_size_B, rep_size).double().to(device), model
+        # print("model is",model)
 
         if (model_server == "MLP"):
                     if (dataset == "mhealth"):
@@ -105,13 +95,13 @@ def main(experiment, dataset, algorithm, model, model_server, embedding_layer, e
                                        embedding_layer, embedding_layer1, batch_size, learning_rate,
                                        num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
 
-        elif (algorithm == "FedMEKT"):
+        elif (algorithm == "FedMEKT-S"):
             if (commet):
                 experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
                     learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
             server = MultimodalRep(train_A, train_B, experiment, device, data, algorithm, model, model_server, embedding_layer,embedding_layer1,
                                       batch_size, learning_rate, num_glob_iters, local_epochs, optimizer, numusers, i, cutoff, args)
-        elif (algorithm == "FedMEFKT"):
+        elif (algorithm == "FedMEKT-C"):
             if (commet):
                 experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
                     learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
@@ -119,14 +109,7 @@ def main(experiment, dataset, algorithm, model, model_server, embedding_layer, e
                                    embedding_layer, embedding_layer1,
                                    batch_size, learning_rate, num_glob_iters, local_epochs, optimizer, numusers, i,
                                    cutoff, args)
-        elif (algorithm == "FedEKD"):
-            if (commet):
-                experiment.set_name(dataset + "_" + algorithm + "_" + model[1] + "_" + str(batch_size) + "_" + str(
-                    learning_rate) + "_" + str(num_glob_iters) + "_" + str(local_epochs) + "_" + str(numusers))
-            server = MultimodalFedEKD(train_A, train_B, experiment, device, data, algorithm, model, model_server,
-                                   embedding_layer, embedding_layer1,
-                                   batch_size, learning_rate, num_glob_iters, local_epochs, optimizer, numusers, i,
-                                   cutoff, args)
+
 
 
 

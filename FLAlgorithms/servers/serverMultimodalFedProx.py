@@ -4,22 +4,23 @@ import torch.multiprocessing as mp
 from tqdm import tqdm
 import torch.nn as nn
 from FLAlgorithms.users.userMultimodalFedProx import UserMultimodalFedProx
-from FLAlgorithms.users.userbase_dem import User
-from FLAlgorithms.servers.serverbase_dem import Dem_Server
+from FLAlgorithms.users.userbase import User
+# from FLAlgorithms.servers.serverbase_dem import Dem_Server
+from FLAlgorithms.servers.serverbase import Server
 from Setting import rs_file_path, N_clients
 from utils.data_utils import write_file
 from utils.dem_plot import plot_from_file, plot_from_file2
 from utils.model_utils import read_data, read_user_data, read_public_data,make_seq_batch,get_seg_len,load_data,client_idxs
 from torch.utils.data import DataLoader
 import numpy as np
-from FLAlgorithms.optimizers.fedoptimizer import DemProx_SGD
-from FLAlgorithms.trainmodel.models import *
+
+
 # Implementation for Server
 from utils.train_utils import KL_Loss, JSD
 from Setting import *
 from torch import nn, optim
 from sklearn.metrics import f1_score
-class MultimodalFedProx(Dem_Server):
+class MultimodalFedProx(Server):
     def __init__(self, train_A, train_B, experiment, device, dataset, algorithm, model, model_server,embedding_layer,embedding_layer1, batch_size, learning_rate,
                   num_glob_iters, local_epochs, optimizer, num_users, times, cutoff, args):
         super().__init__(train_A, train_B, experiment, device, dataset, algorithm, model[0],model_server[0],embedding_layer[0],embedding_layer1[0],  batch_size, learning_rate,
@@ -46,6 +47,7 @@ class MultimodalFedProx(Dem_Server):
         self.num_clients_A = NUM_CLIENT_A
         self.num_clients_B = NUM_CLIENT_B
         self.num_clients_AB = NUM_CLIENT_AB
+        self.save_interval=2
         # total_users = len(dataset[0][0])
         self.sub_data = cutoff
         if (self.sub_data):
@@ -187,64 +189,64 @@ class MultimodalFedProx(Dem_Server):
             round_accuracy.append(np.mean(epoch_accuracy))
         print("Training accuracy is ",np.mean(round_accuracy))
 
-    def evaluate_local_encoder(self, user):
-        user.model.eval()
-        self.model_server.eval()
-        if self.test_modality == "A":
-            x_samples = np.expand_dims(self.data_test["A"], axis=0)
-        elif self.test_modality == "B":
-            x_samples = np.expand_dims(self.data_test["B"], axis=0)
-        y_samples = np.expand_dims(self.data_test["y"], axis=0)
-        win_loss = []
-        win_accuracy = []
-        win_f1 = []
-        n_samples = x_samples.shape[1]
-        n_eval_process = n_samples // EVAL_WIN + 1
-
-        for i in range(n_eval_process):
-            idx_start = i * EVAL_WIN
-            idx_end = np.min((n_samples, idx_start + EVAL_WIN))
-            x = x_samples[:, idx_start:idx_end, :]
-            y = y_samples[:, idx_start:idx_end]
-
-            inputs = torch.from_numpy(x).double().to(self.device)
-            targets = torch.from_numpy(y.flatten()).to(self.device)
-            rpts, _ = user.model.encode(inputs, self.test_modality)
-            # rpts= user.model.encode(inputs, self.test_modality)
-            output = self.model_server(rpts)
-
-            loss = self.criterion(output, targets.long())
-            top_p, top_class = output.topk(1, dim=1)
-            equals = top_class == targets.view(*top_class.shape).long()
-            accuracy = torch.mean(equals.type(torch.FloatTensor))
-            np_gt = y.flatten()
-            np_pred = top_class.squeeze().cpu().detach().numpy()
-            weighted_f1 = f1_score(np_gt, np_pred, average="weighted")
-
-            win_loss.append(loss.item())
-            win_accuracy.append(accuracy)
-            win_f1.append(weighted_f1)
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        return np.mean(win_f1)
-
-    def client_encoder_test(self):
-        local_f1_accuracy = []
-
-        for user in self.selected_users:
-            local_f1 = self.evaluate_local_encoder(user)
-            local_f1_accuracy.append(local_f1)
-
-
-        self.rs_local_f1_acc.append(local_f1_accuracy)
-        return np.mean(local_f1_accuracy)
-
-    def evaluating_encoder_clients(self):
-        avg_test_accuracy = self.client_encoder_test()
-
-        print("Avg clients F1 score is", avg_test_accuracy)
-        return avg_test_accuracy
+    # def evaluate_local_encoder(self, user):
+    #     user.model.eval()
+    #     self.model_server.eval()
+    #     if self.test_modality == "A":
+    #         x_samples = np.expand_dims(self.data_test["A"], axis=0)
+    #     elif self.test_modality == "B":
+    #         x_samples = np.expand_dims(self.data_test["B"], axis=0)
+    #     y_samples = np.expand_dims(self.data_test["y"], axis=0)
+    #     win_loss = []
+    #     win_accuracy = []
+    #     win_f1 = []
+    #     n_samples = x_samples.shape[1]
+    #     n_eval_process = n_samples // EVAL_WIN + 1
+    #
+    #     for i in range(n_eval_process):
+    #         idx_start = i * EVAL_WIN
+    #         idx_end = np.min((n_samples, idx_start + EVAL_WIN))
+    #         x = x_samples[:, idx_start:idx_end, :]
+    #         y = y_samples[:, idx_start:idx_end]
+    #
+    #         inputs = torch.from_numpy(x).double().to(self.device)
+    #         targets = torch.from_numpy(y.flatten()).to(self.device)
+    #         rpts, _ = user.model.encode(inputs, self.test_modality)
+    #         # rpts= user.model.encode(inputs, self.test_modality)
+    #         output = self.model_server(rpts)
+    #
+    #         loss = self.criterion(output, targets.long())
+    #         top_p, top_class = output.topk(1, dim=1)
+    #         equals = top_class == targets.view(*top_class.shape).long()
+    #         accuracy = torch.mean(equals.type(torch.FloatTensor))
+    #         np_gt = y.flatten()
+    #         np_pred = top_class.squeeze().cpu().detach().numpy()
+    #         weighted_f1 = f1_score(np_gt, np_pred, average="weighted")
+    #
+    #         win_loss.append(loss.item())
+    #         win_accuracy.append(accuracy)
+    #         win_f1.append(weighted_f1)
+    #
+    #         if torch.cuda.is_available():
+    #             torch.cuda.empty_cache()
+    #     return np.mean(win_f1)
+    #
+    # def client_encoder_test(self):
+    #     local_f1_accuracy = []
+    #
+    #     for user in self.selected_users:
+    #         local_f1 = self.evaluate_local_encoder(user)
+    #         local_f1_accuracy.append(local_f1)
+    #
+    #
+    #     self.rs_local_f1_acc.append(local_f1_accuracy)
+    #     return np.mean(local_f1_accuracy)
+    #
+    # def evaluating_encoder_clients(self):
+    #     avg_test_accuracy = self.client_encoder_test()
+    #
+    #     print("Avg clients F1 score is", avg_test_accuracy)
+    #     return avg_test_accuracy
 
     def evaluating_classifier(self, epochs):
         self.model.eval()
@@ -307,22 +309,8 @@ class MultimodalFedProx(Dem_Server):
                 self.experiment.set_epoch(glob_iter + 1)
 
 
-            # # ============= Test each client =============
-            # tqdm.write('============= Test Client Models - Specialization ============= ')
-            # stest_acu, strain_acc = self.evaluating_clients(glob_iter, mode="spe")
-            # self.cs_avg_data_test.append(stest_acu)
-            # self.cs_avg_data_train.append(strain_acc)
-            # tqdm.write('============= Test Client Models - Generalization ============= ')
-            # gtest_acu, gtrain_acc = self.evaluating_clients(glob_iter, mode="gen")
-            # self.cg_avg_data_test.append(gtest_acu)
-            # self.cg_avg_data_train.append(gtrain_acc)
-            # tqdm.write('============= Test Global Models  ============= ')
-
             # loss_ = 0
             self.send_parameters()   #Broadcast the global model to all clients
-
-
-
 
             #
             # # NOTE: this is required for the ``fork`` method to work
@@ -337,7 +325,7 @@ class MultimodalFedProx(Dem_Server):
             # print("model server", self.model.state_dict())
             #
             self.rs_rec_loss.append(reconstruction_loss)
-            # self.aggregate_parameters()
+
             self.aggregate_parameters_multimodal()  # Aggregate parameters from local autoencoder
 
 
@@ -353,26 +341,15 @@ class MultimodalFedProx(Dem_Server):
             else:
                 with torch.no_grad():
                     self.evaluating_classifier(global_generalized_epochs)  # evaluate global classifier
+            #
+            # client_avg_acc = self.evaluating_encoder_clients()
+            # self.c_avg_test.append(client_avg_acc)
 
-            client_avg_acc = self.evaluating_encoder_clients()
-            self.c_avg_test.append(client_avg_acc)
-
-            # for user in self.selected_users:
-            #     local_f1 = self.evaluate_local_encoder(user)
-            #     local_f1_accuracy.append(local_f1)
-            # self.rs_local_f1_acc.append(local_f1_accuracy)
 
         # self.save_results1()
         # self.save_model()
         self.save_results2()
 
-    def save_results1(self):
-        write_file(file_name=rs_file_path, root_test=self.rs_glob_acc, root_train=self.rs_train_acc,
-                   cs_avg_data_test=self.cs_avg_data_test, cs_avg_data_train=self.cs_avg_data_train,
-                   cg_avg_data_test=self.cg_avg_data_test, cg_avg_data_train=self.cg_avg_data_train,
-                   cs_data_test=self.cs_data_test, cs_data_train=self.cs_data_train, cg_data_test=self.cg_data_test,
-                   cg_data_train=self.cg_data_train, N_clients=[N_clients])
-        plot_from_file()
     def save_results2(self):
         write_file(file_name=rs_file_path, root_test=self.rs_glob_acc, loss=self.rs_test_loss, rec_loss=self.rs_rec_loss,
                    local_f1_acc=self.rs_local_f1_acc,avg_local_f1_acc=self.c_avg_test,N_clients=[N_clients])

@@ -5,23 +5,27 @@ import os
 import torch.multiprocessing as mp
 from tqdm import tqdm
 import torch.nn as nn
-from FLAlgorithms.users.userFedMEKT1 import userMultimodalRepFusion
-from FLAlgorithms.users.userbase_dem import User
-from FLAlgorithms.servers.serverbase_dem import Dem_Server
+from FLAlgorithms.users.userFedMEKTC import userMultimodalRepFusion
+from FLAlgorithms.users.userbase import User
+# from FLAlgorithms.servers.serverbase_dem import Dem_Server
+from FLAlgorithms.servers.serverbase import Server
 from Setting import rs_file_path, N_clients
 from utils.data_utils import write_file
 from utils.dem_plot import plot_from_file,plot_from_file2
 from utils.model_utils import read_data, read_user_data, read_public_data,make_seq_batch,get_seg_len,load_data,client_idxs, split_public,get_seg_len_public
 from torch.utils.data import DataLoader
 import numpy as np
-from FLAlgorithms.optimizers.fedoptimizer import DemProx_SGD
-from FLAlgorithms.trainmodel.models import *
+# from FLAlgorithms.optimizers.fedoptimizer import DemProx_SGD
+# from FLAlgorithms.trainmodel.models import *
 # Implementation for Server
+import json, codecs
+
 from utils.train_utils import KL_Loss, JSD, DCCLoss
 from Setting import *
 from torch import nn, optim
 from sklearn.metrics import f1_score
-class MultimodalRepFusion(Dem_Server):
+import sys
+class MultimodalRepFusion(Server):
     def __init__(self, train_A, train_B,experiment, device, dataset, algorithm, model,  model_server,embedding_layer,embedding_layer1, batch_size,
                  learning_rate, num_glob_iters, local_epochs, optimizer, num_users, times , cutoff,args):
         super().__init__(train_A, train_B,experiment, device, dataset, algorithm, model[0],  model_server[0],embedding_layer[0],embedding_layer1[0],batch_size,
@@ -128,11 +132,26 @@ class MultimodalRepFusion(Dem_Server):
         for param in sub_model.parameters():
             param.requires_grad = True
 
+    def serialize_numpy(obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.generic):
+            return np.asscalar(obj)
+        elif isinstance(obj, np.datetime64):
+            return obj.astype(str)
+        elif np.isnan(obj):
+            return 'NaN'
+        elif np.isinf(obj):
+            return 'Infinity' if obj >0 else '-Infinity'
+        else:
+            raise TypeError(f"Object of type '{type(obj).__name__}' is not JSON serializable")
 
-    def global_ae_distill(self, epochs):
+
+    def global_ae_distill(self, epochs,global_epochs):
         # self.freeze(self.model)
 
         self.model.train()
+
 
         repA_local= dict()
         repA_local_full= dict()
@@ -147,27 +166,34 @@ class MultimodalRepFusion(Dem_Server):
         repA1_avg=dict()
         repB1_avg= dict()
 
+
         a = 0
         b = 0
         k = 0
         n_A = 0
         n_B = 0
         for user in self.selected_users:
-            # if user.modality == "A " or user.modality == "AB":
-            #     n_A += 1
-            # if user.modality == "B" or user.modality == "AB":
-            #     n_B += 1
+            if user.modality == "A" or user.modality == "AB":
+                n_A += 1
+            if user.modality == "B" or user.modality == "AB":
+                n_B += 1
             k+=1
 
         for user in self.selected_users:
             # batch_size = np.random.randint(
             #     low=self.batch_min, high=self.batch_max)
-            a += 1
-            b+=1
-            repA_local.clear()
-            repB_local.clear()
-            repA1_local.clear()
-            repB1_local.clear()
+            if user.modality == "A" or user.modality == "AB":
+                a += 1
+                repA_local.clear()
+                repA1_local.clear()
+            if user.modality == "B" or user.modality == "AB":
+                b += 1
+                repB1_local.clear()
+                repB_local.clear()
+            # repA_local.clear()
+            # repB_local.clear()
+            # repA1_local.clear()
+            # repB1_local.clear()
             if DATASET == "ur_fall":
                 batch_size = 24
             else:
@@ -188,30 +214,44 @@ class MultimodalRepFusion(Dem_Server):
                 idx_start_public = idx_end_public
                 idx_end_public += win_len
                 idx_end_public = min(idx_end_public, seq_len_public)
+                if user.modality == "A" or user.modality == "AB":
+                    x_A_public = A_public[:, idx_start_public:idx_end_public, :]
+                    seq_A_public = torch.from_numpy(x_A_public).double().to(self.device)
+                    repA_public, repA_public1 = user.model.encode(seq_A_public, "A")
+                    # repA_public= user.model.encode(seq_A_public, "A")
+                    repA_public = repA_public.cpu().detach().numpy()
+                    repA_public1 = repA_public1.cpu().detach().numpy()
+                    repA_local[idx_end_public]= repA_public
+                    repA1_local[idx_end_public] = repA_public1
+                if user.modality == "B" or user.modality == "AB":
 
-                x_A_public = A_public[:, idx_start_public:idx_end_public, :]
-                seq_A_public = torch.from_numpy(x_A_public).double().to(self.device)
-                repA_public, repA_public1 = user.model.encode(seq_A_public, "A")
-                # repA_public= user.model.encode(seq_A_public, "A")
-                repA_public = repA_public.cpu().detach().numpy()
-                repA_public1 = repA_public1.cpu().detach().numpy()
-                repA_local[idx_end_public]= repA_public
-                repA1_local[idx_end_public] = repA_public1
+                    x_B_public = B_public[:, idx_start_public:idx_end_public, :]
+                    seq_B_public = torch.from_numpy(x_B_public).double().to(self.device)
+                    repB_public, repB_public1 = user.model.encode(seq_B_public, "B")
+                    # repB_public = user.model.encode(seq_B_public, "B")
+                    repB_public = repB_public.cpu().detach().numpy()
+                    repB_public1 = repB_public1.cpu().detach().numpy()
+                    repB_local[idx_end_public] = repB_public
+                    repB1_local[idx_end_public] = repB_public1
 
+            if user.modality == "A" or user.modality == "AB":
+                repA_local_full[a] = repA_local
+                repA1_local_full[a] = repA1_local
+            if user.modality == "B" or user.modality == "AB":
+                repB_local_full[b] = repB_local
+                repB1_local_full[b] = repB1_local
 
-                x_B_public = B_public[:, idx_start_public:idx_end_public, :]
-                seq_B_public = torch.from_numpy(x_B_public).double().to(self.device)
-                repB_public, repB_public1 = user.model.encode(seq_B_public, "B")
-                # repB_public = user.model.encode(seq_B_public, "B")
-                repB_public = repB_public.cpu().detach().numpy()
-                repB_public1 = repB_public1.cpu().detach().numpy()
-                repB_local[idx_end_public] = repB_public
-                repB1_local[idx_end_public] = repB_public1
+        # save_dir = "./knowledge/MM-FedMEKT-C"
+        #
+        # knowledge_A=dict()
+        # knowledge_A1 = dict()
+        # knowledge_B = dict()
+        # knowledge_B1 = dict()
+        # file_pathA = os.path.join(save_dir, 'knowledgeA_r_{}.json'.format(global_epochs))
+        # file_pathA1 = os.path.join(save_dir, 'knowledgeA1_r_{}.json'.format(global_epochs))
+        # file_pathB = os.path.join(save_dir, 'knowledgeB_r_{}.json'.format(global_epochs))
+        # file_pathB1 = os.path.join(save_dir, 'knowledgeB1_r_{}.json'.format(global_epochs))
 
-            repA_local_full[a] = repA_local
-            repB_local_full[b] = repB_local
-            repA1_local_full[a] = repA1_local
-            repB1_local_full[b] = repB1_local
 
         # print("rep B full", repB_local_full)
         n=0
@@ -219,28 +259,33 @@ class MultimodalRepFusion(Dem_Server):
             repA = repA_local_full[client]
             for key in repA_local_full[client].keys():
                 if (n==0):
-                    repA_avg[key] = repA[key]/k
+                    repA_avg[key] = repA[key]/n_A
                 else:
-                    repA_avg[key] +=repA[key]/k
+                    repA_avg[key] +=repA[key]/n_A
+                # knowledge_A[key] =repA_avg[key].tolist()
             n+=1
+        # print(repA_test)
+
 
         m=0
         for client in repB_local_full.keys():
             repB = repB_local_full[client]
             for key in repB_local_full[client].keys():
                 if (m == 0):
-                    repB_avg[key] = repB[key] / k
+                    repB_avg[key] = repB[key] / n_B
                 else:
-                    repB_avg[key] += repB[key] / k
+                    repB_avg[key] += repB[key] / n_B
+                # knowledge_B[key] = repB_avg[key].tolist()
             m += 1
         g = 0
         for client in repA1_local_full.keys():
             repA1 = repA1_local_full[client]
             for key in repA1_local_full[client].keys():
                 if (g == 0):
-                    repA1_avg[key] = repA1[key] / k
+                    repA1_avg[key] = repA1[key] /n_A
                 else:
-                    repA1_avg[key] += repA1[key] / k
+                    repA1_avg[key] += repA1[key] / n_A
+                # knowledge_A1[key] = repA1_avg[key].tolist()
             g += 1
 
         j = 0
@@ -248,11 +293,39 @@ class MultimodalRepFusion(Dem_Server):
             repB1 = repB1_local_full[client]
             for key in repB1_local_full[client].keys():
                 if (j == 0):
-                    repB1_avg[key] = repB1[key] / k
+                    repB1_avg[key] = repB1[key] / n_B
                 else:
-                    repB1_avg[key] += repB1[key] / k
+                    repB1_avg[key] += repB1[key] / n_B
+                # knowledge_B1[key] = repB1_avg[key].tolist()
             j += 1
         # print("local rep B is", repB_avg)
+
+        #Calculate knowledge size
+        # size_bytes_A= sys.getsizeof(repA_avg)
+        # size_kb_A = size_bytes_A / 1024
+        # print(f"Rep A size:{size_kb_A:.2f} KB")
+        #
+        # size_bytes_A1 = sys.getsizeof(repA_avg)
+        # size_kb_A1= size_bytes_A1 / 1024
+        # print(f"Rep A1 size:{size_kb_A1:.2f} KB")
+        #
+        # size_bytes_B = sys.getsizeof(repB_avg)
+        # size_kb_B = size_bytes_B / 1024
+        # print(f"Rep B size:{size_kb_B:.2f} KB")
+        #
+        # size_bytes_B1 = sys.getsizeof(repB1_avg)
+        # size_kb_B1 = size_bytes_B1 / 1024
+        # print(f"Rep B1 size:{size_kb_B1:.2f} KB")
+
+        # #Save knowledge to json file
+        # with open(file_pathA, 'w') as f:
+        #     json.dump(knowledge_A, f)
+        # with open(file_pathA1, 'w') as f:
+        #     json.dump(knowledge_A1, f)
+        # with open(file_pathB, 'w') as f:
+        #     json.dump(knowledge_B, f)
+        # with open(file_pathB1, 'w') as f:
+        #     json.dump(knowledge_B1, f)
 
 
         # TODO: Avg rep local output according num of samples of each users
@@ -344,34 +417,15 @@ class MultimodalRepFusion(Dem_Server):
                     # lossSim1 = self.cos(repA_public1, repA1_avg_local)
                     lossTrue_A = loss_A + loss_B
 
-                    if Global_CDKT_metric == "KL":
+
                         # loss = lossTrue  + eta * (lossKD + lossKD1)
-                        if One_Layer:
-                            lossA = lossTrue_A + eta*lossKD
-                        else:
-                            lossA = lossTrue_A + eta*lossKD + gamma*lossKD1
-                        # loss = lossTrue + gamma * lossKD1
-                        # Global_Knowledge_Transfer_Loss.append((lossKD1+lossKD).item())
-                        Global_Knowledge_Transfer_Loss.append(lossKD.item())
-                    elif Global_CDKT_metric == "Norm2":
-                        # loss = lossTrue + eta *(norm2loss+ norm2loss1)
-                        # loss = lossTrue + eta*norm2loss + gamma*norm2loss1
-                        loss = lossTrue_A + gamma * norm2loss1
-                        Global_Knowledge_Transfer_Loss.append(norm2loss1.item())
-                    elif Global_CDKT_metric == "JSD":
-                        # print("doing here")
-                        # loss = lossTrue + eta*(lossJSD + lossJSD1)
-                        # loss = lossTrue + eta*lossJSD + gamma*lossJSD1
-                        loss = lossTrue_A + gamma * lossJSD1
-                        Global_Knowledge_Transfer_Loss.append(lossJSD1.item())
-                    elif Global_CDKT_metric == "Cos":
-                        # loss = lossTrue -eta*( lossSim.mean() + lossSim1.mean())
-                        loss = lossTrue_A +eta*lossSim.mean() + gamma*lossSim1.mean()
-                        # loss = lossTrue - gamma * lossSim1.mean()
-                        Global_Knowledge_Transfer_Loss.append(lossSim1.mean().item())
-
-
-
+                    if One_Layer:
+                        lossA = lossTrue_A + eta*lossKD
+                    else:
+                        lossA = lossTrue_A + eta*lossKD + gamma*lossKD1
+                    # loss = lossTrue + gamma * lossKD1
+                    # Global_Knowledge_Transfer_Loss.append((lossKD1+lossKD).item())
+                    Global_Knowledge_Transfer_Loss.append(lossKD.item())
 
                     # self.unfreeze(self.model.encoder_B)
 
@@ -391,31 +445,16 @@ class MultimodalRepFusion(Dem_Server):
                     lossTrue_B = loss_A + loss_B
                     Global_ReconstructionLoss.append((lossTrue_A+lossTrue_B).item())
 
-                    if Global_CDKT_metric == "KL":
+
                         # loss = lossTrue  + eta * (lossKD + lossKD1)
-                        if One_Layer:
-                            lossB = lossTrue_B + eta*lossKD
-                        else:
-                            lossB = lossTrue_B + eta*lossKD + gamma*lossKD1
-                        # loss = lossTrue + gamma * lossKD1
-                        # Global_Knowledge_Transfer_Loss.append((lossKD1+lossKD).item())
-                        Global_Knowledge_Transfer_Loss.append( lossKD.item())
-                    elif Global_CDKT_metric == "Norm2":
-                        # loss = lossTrue + eta *(norm2loss+ norm2loss1)
-                        # loss = lossTrue + eta*norm2loss + gamma*norm2loss1
-                        loss = lossTrue_B  + gamma * norm2loss1
-                        Global_Knowledge_Transfer_Loss.append(norm2loss1.item())
-                    elif Global_CDKT_metric == "JSD":
-                        # print("doing here")
-                        # loss = lossTrue + eta*(lossJSD + lossJSD1)
-                        # loss = lossTrue + eta * lossJSD + gamma*lossJSD1
-                        loss = lossTrue_B+ gamma * lossJSD1
-                        Global_Knowledge_Transfer_Loss.append(lossJSD1.item())
-                    elif Global_CDKT_metric == "Cos":
-                        # loss = lossTrue -eta*( lossSim.mean() + lossSim1.mean())
-                        # loss = lossTrue - eta*lossSim.mean() - gamma*lossSim1.mean()
-                        loss = lossTrue_B - gamma * lossSim1.mean()
-                        Global_Knowledge_Transfer_Loss.append(lossSim1.mean().item())
+                    if One_Layer:
+                        lossB = lossTrue_B + eta*lossKD
+                    else:
+                        lossB = lossTrue_B + eta*lossKD + gamma*lossKD1
+                    # loss = lossTrue + gamma * lossKD1
+                    # Global_Knowledge_Transfer_Loss.append((lossKD1+lossKD).item())
+                    Global_Knowledge_Transfer_Loss.append( lossKD.item())
+
 
                     loss = lossA+lossB
                     # loss = lossTrue_A + lossTrue_B + eta*lossKD + gamma*lossKD1
@@ -435,6 +474,7 @@ class MultimodalRepFusion(Dem_Server):
     def global_update(self, epochs):
         # print("model param is",self.model.state_dict())
         # self.freeze(self.model)
+
         self.model.eval()
         self.model_server.train()
         # print("model server weight update is",self.model.state_dict())
@@ -518,6 +558,7 @@ class MultimodalRepFusion(Dem_Server):
         print("Training accuracy is ", np.mean(round_accuracy))
         # self.unfreeze(self.model)
     def evaluate_local_encoder(self, user):
+
         user.model.eval()
         if Global_Classifier:
             self.model_server.eval()
@@ -650,19 +691,7 @@ class MultimodalRepFusion(Dem_Server):
             if(self.experiment):
                 self.experiment.set_epoch( glob_iter + 1)
 
-            #
-            # # ============= Test each client =============
-            # tqdm.write('============= Test Client Models - Specialization ============= ')
-            # stest_acu, strain_acc = self.evaluating_clients(glob_iter, mode="spe")
-            # self.cs_avg_data_test.append(stest_acu)
-            # self.cs_avg_data_train.append(strain_acc)
-            # tqdm.write('============= Test Client Models - Generalization ============= ')
-            # gtest_acu, gtrain_acc = self.evaluating_clients(glob_iter, mode="gen")
-            # self.cg_avg_data_test.append(gtest_acu)
-            # self.cg_avg_data_train.append(gtrain_acc)
-            # tqdm.write('============= Test Global Models  ============= ')
-            #loss_ = 0
-            # self.send_parameters()   #Broadcast the global model to all clients
+
 
             reconstruction_loss= []
             knowledge_transfer_loss = []
@@ -686,7 +715,7 @@ class MultimodalRepFusion(Dem_Server):
 
 
 
-            Global_rec,Global_kt=self.global_ae_distill(global_ae_distill_epoch)
+            Global_rec,Global_kt=self.global_ae_distill(global_ae_distill_epoch,glob_iter)
             self.rs_global_rec_loss.append(Global_rec)
             self.rs_global_kt_loss.append(Global_kt)
 
@@ -700,12 +729,12 @@ class MultimodalRepFusion(Dem_Server):
                 with torch.no_grad():
                     self.evaluating_classifier(global_generalized_epochs)
 
-            if Global_Classifier==False:
-                for user in self.selected_users:
-                    user.local_classifier_fine_tune(local_classifier_epochs,self.train_A,self.train_B)
-
-            client_avg_acc=self.evaluating_encoder_clients()
-            self.c_avg_test.append(client_avg_acc)
+            # if Global_Classifier==False:
+            #     for user in self.selected_users:
+            #         user.local_classifier_fine_tune(local_classifier_epochs,self.train_A,self.train_B)
+            #
+            # client_avg_acc=self.evaluating_encoder_clients()
+            # self.c_avg_test.append(client_avg_acc)
 
             # for user in self.selected_users:
             #     local_f1 = self.evaluate_local_encoder(user)
@@ -721,15 +750,9 @@ class MultimodalRepFusion(Dem_Server):
         # self.save_results1()
         # self.save_model()
         self.save_results2()
-    def save_results1(self):
-        write_file(file_name=rs_file_path, root_test=self.rs_glob_acc, root_train=self.rs_train_acc,
-                   cs_avg_data_test=self.cs_avg_data_test, cs_avg_data_train=self.cs_avg_data_train,
-                   cg_avg_data_test=self.cg_avg_data_test, cg_avg_data_train=self.cg_avg_data_train,
-                   cs_data_test=self.cs_data_test, cs_data_train=self.cs_data_train, cg_data_test=self.cg_data_test,
-                   cg_data_train=self.cg_data_train, N_clients=[N_clients])
-        plot_from_file()
+
     def save_results2(self):
         write_file(file_name=rs_file_path, root_test=self.rs_glob_acc, loss=self.rs_test_loss, rec_loss=self.rs_rec_loss, kt_loss=self.rs_kt_loss,
-                   global_rec_loss=self.rs_global_rec_loss,global_kt_loss=self.rs_global_kt_loss,local_f1_acc=self.rs_local_f1_acc,avg_local_f1_acc=self.c_avg_test,
+                   global_rec_loss=self.rs_global_rec_loss,global_kt_loss=self.rs_global_kt_loss,
                    N_clients=[N_clients])
         plot_from_file2()

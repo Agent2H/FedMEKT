@@ -50,40 +50,6 @@ def read_data(file_name = "../results/untitled.h5"):
 
 
 
-def plot_dendrogram(rs_linkage_matrix, round, alg):
-    # Plot the corresponding dendrogram
-    # change p value to 5 if we want to get 5 levels
-    #dendogram supporting plot inside buitlin function, so we dont need to create our own method to plot figure or results
-    plt.title('#Round=%s'%(round))
-
-    rs_dendrogram = dendrogram(rs_linkage_matrix, truncate_mode='level', p=K_Levels)
-    if(MODEL_TYPE == "cnn"):
-        if(CLUSTER_METHOD == "gradient"):
-            plt.ylim(0, 0.0006)
-        else:
-            plt.ylim(0, 1.)
-    else:
-        plt.ylim(0,1.5)
-
-def plot_dendo_data_dem():
-    plt.rcParams.update({'font.size': 14})
-    plt.figure(figsize=(6,5))
-    f_data = read_data(rs_file_path)
-    dendo_data = f_data['dendo_data']
-    dendo_data_round = f_data['dendo_data_round']
-    print(dendo_data_round)
-    i = 0
-    t = 0
-    while( t < NUM_GLOBAL_ITERS):
-        plt.clf()
-        plot_dendrogram(dendo_data[i], dendo_data_round[i], RUNNING_ALG)
-        plt.tight_layout()
-        plt.savefig(PLOT_PATH + "den_I" + str(t) + OUT_TYPE)
-        t+= TREE_UPDATE_PERIOD
-        i+=1
-
-    return 0
-
 def plot_from_file():
     f_data = read_data(rs_file_path)
     # if("dem" in RUNNING_ALG):
@@ -189,10 +155,7 @@ def plot_from_file2():
     plt.figure(4)
     plt.clf()
     plt.plot(f_data['root_test'], label="Root_test", linestyle="--")
-    if("dem" in RUNNING_ALG):
-        # for k in range (K_Levels):
-            plt.plot(f_data['gs_level_test'][-2,:,0], label="Gr(K)_spec_test", linestyle="-.")
-            plt.plot(f_data['gg_level_test'][-2,:,0], label="Gr(K)_gen_test", linestyle="-.")
+
 
     #
     # plt.plot(np.arange(len(f_data['cs_avg_data_test'])), f_data['cs_avg_data_test'], label="Client_spec_test")
@@ -260,46 +223,38 @@ def plot_from_file2():
         plt.title("Training Global Knowledge Transfer Loss")
         plt.savefig(PLOT_PATH + alg_name + "Global_KT_Loss_Training.pdf")
 
-    plt.figure(12)
-    plt.clf()
-    plt.plot(f_data['local_f1_acc'])
-    plt.plot(f_data['local_f1_acc'], linestyle="--", label="local_f1_acc")
-    plt.legend()
-    plt.xlabel("Global Rounds")
-    plt.ylim(YLim, 1.02)
-    plt.grid()
-    plt.title("Testing Local F1 Accuracy")
-    plt.savefig(PLOT_PATH + alg_name + "Testing_Local_F1_Accuracy.pdf")
-
-    plt.figure(13)
-    plt.clf()
-    plt.plot(f_data['avg_local_f1_acc'])
-    plt.plot(f_data['avg_local_f1_acc'], linestyle="--", label="avg_local_f1_acc")
-    plt.legend()
-    plt.xlabel("Global Rounds")
-    plt.ylim(YLim, 1.02)
-    plt.grid()
-    plt.title("Avg Testing Local F1 Accuracy")
-    plt.savefig(PLOT_PATH + alg_name + "Avg_Testing_Local_F1_Accuracy.pdf")
+    # plt.figure(12)
+    # plt.clf()
+    # plt.plot(f_data['local_f1_acc'])
+    # plt.plot(f_data['local_f1_acc'], linestyle="--", label="local_f1_acc")
+    # plt.legend()
+    # plt.xlabel("Global Rounds")
+    # plt.ylim(YLim, 1.02)
+    # plt.grid()
+    # plt.title("Testing Local F1 Accuracy")
+    # plt.savefig(PLOT_PATH + alg_name + "Testing_Local_F1_Accuracy.pdf")
+    #
+    # plt.figure(13)
+    # plt.clf()
+    # plt.plot(f_data['avg_local_f1_acc'])
+    # plt.plot(f_data['avg_local_f1_acc'], linestyle="--", label="avg_local_f1_acc")
+    # plt.legend()
+    # plt.xlabel("Global Rounds")
+    # plt.ylim(YLim, 1.02)
+    # plt.grid()
+    # plt.title("Avg Testing Local F1 Accuracy")
+    # plt.savefig(PLOT_PATH + alg_name + "Avg_Testing_Local_F1_Accuracy.pdf")
     plt.show()
 
-    # print("** Summary Results: ---- Training ----")
-    # print("AVG Clients Specialization - Training:", f_data['cs_avg_data_train'])
-    # print("AVG Clients Generalization - Training::", f_data['cg_avg_data_train'])
-    # print("Root performance - Training:", f_data['root_train'])
-    # print("** Summary Results: ---- Testing ----")
-    # print("AVG Clients Specialization - Testing:", f_data['cs_avg_data_test'])
-    # print("AVG Clients Generalization - Testing:", f_data['cg_avg_data_test'])
-    # print("Root performance - Testing:", f_data['root_test'])
 
-if __name__=='__main__':
-    #
-    # PLOT_PATH = "."+PLOT_PATH
-    # RS_PATH = "."+RS_PATH
-    rp = "."+complex_file_path
-    # plot_from_file()
-    print(rp)
-    time_data = read_data(rp)
-    data = time_data['time_complex']
-    print(data)
-    print('mean =', np.mean(data), ' median: = ', np.median(data))
+# if __name__=='__main__':
+#     #
+#     # PLOT_PATH = "."+PLOT_PATH
+#     # RS_PATH = "."+RS_PATH
+#     # rp = "."+complex_file_path
+#     # # plot_from_file()
+#     # print(rp)
+#     # time_data = read_data(rp)
+#     # data = time_data['time_complex']
+#     # print(data)
+#     # print('mean =', np.mean(data), ' median: = ', np.median(data))

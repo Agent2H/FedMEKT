@@ -6,53 +6,87 @@ import json
 from torch.utils.data import DataLoader
 import numpy as np
 import copy
+from Setting import *
 
-class User:
+
+
+class User():
     """
     Base class for users in federated learning.
     """
-    def __init__(self, device, id, train_data, test_data, model, model_server, batch_size = 0, learning_rate = 0, beta = 0 , L_k = 0, local_epochs = 0):
+    def __init__(self, device, id, train_data, public_data,  model, model_server, embedding_layer,embedding_layer1, client_model, batch_size = 0, learning_rate = 0, beta = 0 , L_k = 0, local_epochs = 0, group = None):
         # from fedprox
+
         self.device = device
         self.model = copy.deepcopy(model)
         self.model_server = copy.deepcopy(model_server)
+        self.embedding_layer = copy.deepcopy(embedding_layer)
+        self.embedding_layer1 = copy.deepcopy(embedding_layer1)
+        self.client_model = copy.deepcopy(client_model)
         self.id = id  # integer
         self.train_samples = len(train_data)
-        self.test_samples = len(test_data)
+        # self.test_samples = len(test_data)
+        # self.public_samples = len(public_data)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.beta = beta
         self.L_k = L_k
         self.local_epochs = local_epochs
+        self.group = group
 
+        ### DemLearn Client
+        self._id = id
+        self.group = group or []
+        self._type = "Client"
+        self.level = 0
+        self.childs = None
+        self.numb_clients = 1.0
+        self.gmodel = self.model
+        self.publicdatasetloader =None
 
+        # if(self.batch_size == 0):
+        #     self.trainloader = DataLoader(train_data, self.train_samples,shuffle=True)
+        #     self.testloader =  DataLoader(test_data, self.test_samples,shuffle=True)
+        #     # self.trainloaderpublic = DataLoader(train_public_data, self.train_public_samples, shuffle=True)
+        #     self.publicloader = DataLoader(public_data, self.public_samples, shuffle=True)
+        # else:
+        #     self.trainloader = DataLoader(train_data, self.batch_size,shuffle=True)
+        #     # self.trainloaderpublic = DataLoader(train_public_data, self.batch_size, shuffle=True)
+        #     self.publicloader = DataLoader(public_data, self.batch_size, shuffle=True)
+        #     # self.publicdatasetloader = DataLoader(public_data, self.batch_size, shuffle=False) #no shuffle
+        #     # list(self.publicdatasetloader)
+        #     # for b, (x, y) in enumerate(self.publicdatasetloader):
+        #     #     # self.publicdatasetlist+= (b,(x,y))
+        #     #     print("A")
+        #
+        #     # if(len(train_data) < 200):
+        #     #     self.batch_size = int(len(test_data)/10)
+        #     self.testloader = DataLoader(test_data, self.batch_size,  shuffle=True)
+        #
+        # self.testloaderfull = DataLoader(test_data, self.test_samples,shuffle=True)
+        # self.trainloaderfull = DataLoader(train_data, self.train_samples,shuffle=True)
+        # self.iter_trainloader = iter(self.trainloader)
+        # self.iter_testloader = iter(self.testloader)
 
-        if(self.batch_size == 0):
-            self.trainloader = DataLoader(train_data, self.train_samples,shuffle=True)
-            self.testloader =  DataLoader(test_data, self.test_samples,shuffle=True)
-        else:
-            self.trainloader = DataLoader(train_data, self.batch_size,shuffle=True)
-            # if(len(train_data) < 200):
-            #     self.batch_size = int(len(test_data)/10)
-            self.testloader = DataLoader(test_data, self.batch_size,  shuffle=True)
-
-
-        self.testloaderfull = DataLoader(test_data, self.test_samples,shuffle=True)
-        self.trainloaderfull = DataLoader(train_data, self.train_samples,shuffle=True)
-        self.iter_trainloader = iter(self.trainloader)
-        self.iter_testloader = iter(self.testloader)
-
-        # those parameters are for persionalized federated learing.
+        # # those parameters are for persionalized federated learing.
         self.local_model = copy.deepcopy(list(self.model.parameters()))
-        #self.persionalized_model = copy.deepcopy(list(self.model.parameters()))
-        self.persionalized_model_bar = copy.deepcopy(list(self.model.parameters()))
-
-
+        # #self.persionalized_model = copy.deepcopy(list(self.model.parameters()))
+        # self.persionalized_model_bar = copy.deepcopy(list(self.model.parameters()))
+    
+    # def set_parameters(self, model):
+    #     for old_param, new_param in zip(self.model.parameters(), model.parameters()):
+    #         old_param.data = new_param.data.clone()
+    #     self.gmodel = self.model
     def set_parameters(self, model = None):
         for old_param, new_param, local_param in zip(self.model.parameters(), model.parameters(), self.local_model):
             old_param.data = new_param.data.clone()
             local_param.data = new_param.data.clone()
+            # old_param.data = new_param.data
+            # local_param.data = new_param.data
+        self.gmodel = self.model
 
+
+    
     def set_meta_parameters(self, model):
         for old_param, new_param in zip(self.model.parameters(), model.parameters()):
             old_param.data = new_param.data.clone()
@@ -62,7 +96,9 @@ class User:
             param.detach()
         return self.model.parameters()
 
-    
+    def get_state_dict(self):
+
+        return self.model.state_dict()
     def clone_model_paramenter(self, param, clone_param):
         for param, clone_param in zip(param, clone_param):
             clone_param.data = param.data.clone()
@@ -74,6 +110,7 @@ class User:
     def update_parameters(self, new_params):
         for param , new_param in zip(self.model.parameters(), new_params):
             param.data = new_param.data.clone()
+        self.gmodel = self.model
 
     def get_grads(self):
         grads = []
@@ -84,18 +121,7 @@ class User:
                 grads.append(param.grad.data)
         return grads
 
-    def test(self):
-        self.model.eval()
-        test_acc = 0
-        for x, y in self.testloaderfull:
-            x, y = x.to(self.device), y.to(self.device)
-            # output = self.model(x)
-            output,_ = self.model(x)
-            test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-            #@loss += self.loss(output, y)
-            #print(self.id + ", Test Accuracy:", test_acc / y.shape[0] )
-            #print(self.id + ", Test Loss:", loss)
-        return test_acc, y.shape[0], test_acc / y.shape[0]
+
 
     def test_gen(self, p_model):
         # self.model.eval()
@@ -110,19 +136,19 @@ class User:
             test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
         # self.update_parameters(self.local_model)
         return test_acc, y.shape[0]
+        #### The both implementation shows similar performance C-GEN for FedAvg and G-GEN in DemLearn but not C-GEN ??? ####
+        # self.model.eval()
+        # test_acc = 0
+        # self.update_parameters(p_model.parameters())
+        #
+        # for x, y in self.testloaderfull:
+        #     x, y = x.to(self.device), y.to(self.device)
+        #     output = self.model(x)
+        #     test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+        # self.update_parameters(self.local_model)
+        # return test_acc, y.shape[0]
 
-    def train_error_and_loss(self):
-        self.model.eval()
-        train_acc = 0
-        loss = 0
-        for x, y in self.trainloaderfull:
-            x, y = x.to(self.device), y.to(self.device)
-            output = self.model(x)
-            train_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
-            loss += self.loss(output, y)
-            #print(self.id + ", Train Accuracy:", train_acc)
-            #print(self.id + ", Train Loss:", loss)
-        return train_acc, loss.data.tolist() , self.train_samples
+
     
     def test_persionalized_model(self):
         self.model.eval()

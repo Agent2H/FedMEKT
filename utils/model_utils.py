@@ -1,6 +1,8 @@
 import json
 import numpy as np
 import os
+
+import scipy.io
 import torch
 import torch.nn as nn
 import torchvision
@@ -379,7 +381,7 @@ def load_data(data):
     Returns:
         A dictionary containing training and testing data for modality A&B and labels.
     """
-
+    save_dir = "./data/public_data"
     data = DATASET
     data_path = DATA_PATH
     modality_A = modality_a
@@ -397,6 +399,9 @@ def load_data(data):
             mat_data[f"x_test_{modality_B}"]), "y": np.squeeze(mat_data["y_test"])}
         data_public = {"A": zscore(mat_data[f"x_public_{modality_A}"]), "B": zscore(
             mat_data[f"x_public_{modality_B}"]), "y": np.squeeze(mat_data["y_public"])}
+
+        # scipy.io.savemat('data_public_opp.mat', mdict=data_public)
+
         return (data_train, data_test, data_public)
     elif data == "mhealth":
         modalities = ["acce", "gyro", "mage"]
@@ -429,7 +434,11 @@ def load_data(data):
         data_train["A"] = np.concatenate(data_train["A"])
         data_train["B"] = np.concatenate(data_train["B"])
         data_train["y"] = np.squeeze(np.concatenate(data_train["y"], axis=1))
+        # scipy.io.savemat('data_public_mhealth.mat', mdict=data_public)
+
         return (data_train, data_test, data_public)
+
+
     elif data == "ur_fall":
         modalities = ["acce", "rgb", "depth"]
         assert (
@@ -508,6 +517,8 @@ def load_data(data):
         data_public["A"] = np.concatenate(data_public["A"])
         data_public["B"] = np.concatenate(data_public["B"])
         data_public["y"] = np.squeeze(np.concatenate(data_public["y"]))
+
+        # scipy.io.savemat('data_public_urfall.mat',mdict=data_public)
         return (data_train,  data_test, data_public)
         # return (data_train, data_test,data_public)
 

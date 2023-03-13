@@ -7,9 +7,9 @@ import os
 import json
 from torch.utils.data import DataLoader
 # from FLAlgorithms.users.userbase import User
-from FLAlgorithms.optimizers.fedoptimizer import DemProx_SGD, FedProxOptimizer
-from FLAlgorithms.users.userbase_dem import User
-from FLAlgorithms.trainmodel.models import *
+
+from FLAlgorithms.users.userbase import User
+
 from torch import Tensor
 from collections import OrderedDict
 # Implementation for clients
@@ -79,9 +79,7 @@ class UserMultimodalMoon(User):
 
 
     def train_ae(self, epochs,global_model,pre_w):
-
         self.model.train()
-
         gen_model = copy.deepcopy(global_model)
         gen_model.eval()
         for param in gen_model.parameters():
@@ -114,147 +112,108 @@ class UserMultimodalMoon(User):
                 idx_end += win_len
                 idx_end = min(idx_end, seq_len)
 
-                if self.model_ae== "split_LSTM":
-                    ReconstructionLoss = []
-                    Knowledge_Transfer_Loss = []
-                    if self.modality == "A" or self.modality == "AB":
-                        x_A = A_train[:, idx_start:idx_end, :]
-                        seq_A = torch.from_numpy(x_A).double().to(self.device)
-                        inv_idx = torch.arange(seq_A.shape[1] - 1, -1, -1).long()
 
-                    if self.modality == "B" or self.modality == "AB":
-                        x_B = B_train[:, idx_start:idx_end, :]
-                        seq_B = torch.from_numpy(x_B).double().to(self.device)
-                        inv_idx = torch.arange(seq_B.shape[1] - 1, -1, -1).long()
-                    self.optimizer.zero_grad()
-                    if self.modality == "A":
-                        # print("doing here")
-                        self.freeze(self.model.encoder_B)
-                        self.freeze(self.model.decoder_B)
+                ReconstructionLoss = []
+                Knowledge_Transfer_Loss = []
+                if self.modality == "A" or self.modality == "AB":
+                    x_A = A_train[:, idx_start:idx_end, :]
+                    seq_A = torch.from_numpy(x_A).double().to(self.device)
+                    inv_idx = torch.arange(seq_A.shape[1] - 1, -1, -1).long()
 
-                        output, _ = self.model(seq_A, "A")
-                        loss = self.criterion_MSE(output, seq_A[:, inv_idx, :])
+                if self.modality == "B" or self.modality == "AB":
+                    x_B = B_train[:, idx_start:idx_end, :]
+                    seq_B = torch.from_numpy(x_B).double().to(self.device)
+                    inv_idx = torch.arange(seq_B.shape[1] - 1, -1, -1).long()
+                self.optimizer.zero_grad()
+                if self.modality == "A":
+                    # print("doing here")
+                    self.freeze(self.model.encoder_B)
+                    self.freeze(self.model.decoder_B)
 
-                        loss.backward()
-                        self.optimizer.step()
-                        if torch.cuda.is_available():
-                            torch.cuda.empty_cache()
+                    output, _ = self.model(seq_A, "A")
+                    repA, repA1 = self.model.encode(seq_A, "A")
+                    gen_repA, gen_repA1 = gen_model.encode(seq_A, "A")
+                    repA_prev, repA1_prev = pre_model.encode(seq_A, "A")
+                    # Contrastive loss calculation
+                    positive = torch.mean(self.cos(repA, gen_repA) / self.temperature)
+                    negative = torch.mean(self.cos(repA, repA_prev) / self.temperature)
+                    loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
+                    loss = self.criterion_MSE(output, seq_A[:, inv_idx, :])+mu*loss_con
 
-                        self.unfreeze(self.model.encoder_B)
-                        self.unfreeze(self.model.decoder_B)
-                    elif self.modality == "B":
-                        # print("doing here")
-                        self.freeze(self.model.encoder_A)
-                        self.freeze(self.model.decoder_A)
+                    loss.backward()
+                    self.optimizer.step()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
 
-                        _, output = self.model(seq_B, "B")
-                        loss = self.criterion_MSE(output, seq_B[:, inv_idx, :])
+                    self.unfreeze(self.model.encoder_B)
+                    self.unfreeze(self.model.decoder_B)
+                elif self.modality == "B":
+                    # print("doing here")
+                    self.freeze(self.model.encoder_A)
+                    self.freeze(self.model.decoder_A)
 
-                        loss.backward()
-                        self.optimizer.step()
-                        if torch.cuda.is_available():
-                            torch.cuda.empty_cache()
+                    _, output = self.model(seq_B, "B")
+                    repB, repB1 = self.model.encode(seq_B, "B")
+                    gen_repB, gen_repB1 = gen_model.encode(seq_B, "B")
+                    repB_prev, repB1_prev = pre_model.encode(seq_B, "B")
+                    # Contrastive loss calculation
+                    positive = torch.mean(self.cos(repB, gen_repB) / self.temperature)
+                    negative = torch.mean(self.cos(repB, repB_prev) / self.temperature)
+                    loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
+                    loss = self.criterion_MSE(output, seq_B[:, inv_idx, :]) +mu*loss_con
 
-                        self.unfreeze(self.model.encoder_A)
-                        self.unfreeze(self.model.decoder_A)
-                    elif self.modality == "AB":
-                        # Train with input of modality A and output of modalities A&B
-                        # print("doing here")
+                    loss.backward()
+                    self.optimizer.step()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
 
-                        self.freeze(self.model.encoder_B)
-                        output_A, output_B = self.model(seq_A, "A")
-                        repA, repA1 = self.model.encode(seq_A, "A")
-                        gen_repA, gen_repA1 = gen_model.encode(seq_A, "A")
-                        repA_prev, repA1_prev = pre_model.encode(seq_A, "A")
+                    self.unfreeze(self.model.encoder_A)
+                    self.unfreeze(self.model.decoder_A)
+                elif self.modality == "AB":
+                    # Train with input of modality A and output of modalities A&B
+                    # print("doing here")
+                    self.freeze(self.model.encoder_B)
+                    output_A, output_B = self.model(seq_A, "A")
+                    repA, repA1 = self.model.encode(seq_A, "A")
+                    gen_repA, gen_repA1 = gen_model.encode(seq_A, "A")
+                    repA_prev, repA1_prev = pre_model.encode(seq_A, "A")
 
 
-                        # Contrastive loss calculation
-                        positive = torch.mean(self.cos(repA, gen_repA) / self.temperature)
-                        negative = torch.mean(self.cos(repA, repA_prev) / self.temperature)
-                        loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
-                        # print("loss con is", loss_con)
-                        loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
-                        loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
-                        loss = loss_A + loss_B+ mu*loss_con
-                        ReconstructionLoss.append(loss.item())
+                    # Contrastive loss calculation
+                    positive = torch.mean(self.cos(repA, gen_repA) / self.temperature)
+                    negative = torch.mean(self.cos(repA, repA_prev) / self.temperature)
+                    loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
+                    # print("loss con is", loss_con)
+                    loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
+                    loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
+                    loss = loss_A + loss_B+ mu*loss_con
+                    ReconstructionLoss.append(loss.item())
 
-                        loss.backward()
-                        self.optimizer.step()
-                        if torch.cuda.is_available():
-                            torch.cuda.empty_cache()
-                        self.unfreeze(self.model.encoder_B)
+                    loss.backward()
+                    self.optimizer.step()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    self.unfreeze(self.model.encoder_B)
 
-                        # Train with input of modality B and output of modalities A&B
-                        self.freeze(self.model.encoder_A)
-                        output_A, output_B = self.model(seq_B, "B")
-                        repB, repB1 = self.model.encode(seq_B, "B")
-                        gen_repB, gen_repB1 = gen_model.encode(seq_B, "B")
-                        repB_prev, repB1_prev = pre_model.encode(seq_B, "B")
-                        # Contrastive loss calculation
-                        positive = torch.mean(self.cos(repB, gen_repB) / self.temperature)
-                        negative = torch.mean(self.cos(repB, repB_prev) / self.temperature)
-                        loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
-                        loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
-                        loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
-
-                        loss = loss_A + loss_B+mu*loss_con
-                        ReconstructionLoss.append(loss.item())
-                        loss.backward()
-                        self.optimizer.step()
-                        if torch.cuda.is_available():
-                            torch.cuda.empty_cache()
-                        self.unfreeze(self.model.encoder_A)
-
-                elif self.model_ae == "DCCAE_LSTM":
-                    if self.modality == "A" or self.modality == "AB":
-                        x_A = A_train[:, idx_start:idx_end, :]
-                        seq_A = torch.from_numpy(x_A).double().to(self.device)
-                        inv_idx = torch.arange(seq_A.shape[1] - 1, -1, -1).long()
-
-                    if self.modality == "B" or self.modality == "AB":
-                        x_B = B_train[:, idx_start:idx_end, :]
-                        seq_B = torch.from_numpy(x_B).double().to(self.device)
-                        inv_idx = torch.arange(seq_B.shape[1] - 1, -1, -1).long()
-                    # Train with input of modalities A&B and output of modalities A&B
-                    self.optimizer.zero_grad()
-                    if self.modality == "A":
-                        self.freeze(self.model.encoder_B)
-                        self.freeze(self.model.decoder_B)
-
-                        _, _, output, _ = self.model(x_A=seq_A)
-                        loss = self.criterion_MSE(output, seq_A[:, inv_idx, :])
-                        # sub_epoch_losses.append(loss.item())
-                        loss.backward()
-                        self.optimizer.step()
-                        if torch.cuda.is_available():
-                            torch.cuda.empty_cache()
-
-                        self.unfreeze(self.model.encoder_B)
-                        self.unfreeze(self.model.decoder_B)
-                    elif self.modality == "B":
-                        self.freeze(self.model.encoder_A)
-                        self.freeze(self.model.decoder_A)
-
-                        _, _, _, output = self.model(x_B=seq_B)
-                        loss = self.criterion_MSE(output, seq_B[:, inv_idx, :])
-                        # sub_epoch_losses.append(loss.item())
-                        loss.backward()
-                        self.optimizer.step()
-                        if torch.cuda.is_available():
-                            torch.cuda.empty_cache()
-
-                        self.unfreeze(self.model.encoder_A)
-                        self.unfreeze(self.model.decoder_A)
-                    elif self.modality == "AB":
-                        rep_A, rep_B, output_A, output_B = self.model(x_A=seq_A, x_B=seq_B)
-                        loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
-                        loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
-                        loss_dcc = self.criterion_DCC.loss(rep_A, rep_B)
-                        loss = loss_dcc + DCCAE_lamda * (loss_A + loss_B)
-                        loss.backward()
-                        self.optimizer.step()
-                        if torch.cuda.is_available():
-                            torch.cuda.empty_cache()
+                    # Train with input of modality B and output of modalities A&B
+                    self.freeze(self.model.encoder_A)
+                    output_A, output_B = self.model(seq_B, "B")
+                    repB, repB1 = self.model.encode(seq_B, "B")
+                    gen_repB, gen_repB1 = gen_model.encode(seq_B, "B")
+                    repB_prev, repB1_prev = pre_model.encode(seq_B, "B")
+                    # Contrastive loss calculation
+                    positive = torch.mean(self.cos(repB, gen_repB) / self.temperature)
+                    negative = torch.mean(self.cos(repB, repB_prev) / self.temperature)
+                    loss_con = -torch.log(torch.exp(positive) / (torch.exp(positive) + torch.exp(negative)))
+                    loss_A = self.criterion_MSE(output_A, seq_A[:, inv_idx, :])
+                    loss_B = self.criterion_MSE(output_B, seq_B[:, inv_idx, :])
+                    loss = loss_A + loss_B+mu*loss_con
+                    ReconstructionLoss.append(loss.item())
+                    loss.backward()
+                    self.optimizer.step()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    self.unfreeze(self.model.encoder_A)
                 Rec_loss.extend(ReconstructionLoss)
 
             Rec_round_loss.append(np.mean(Rec_loss))
