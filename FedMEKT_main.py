@@ -18,7 +18,8 @@ from utils.plot_utils import *
 import torch
 torch.manual_seed(0)
 from utils.options import args_parser
-
+import warnings
+warnings.filterwarnings('ignore')
 # import comet_ml at the top of your file
 #python CDKT_main.py --dataset Mnist --model cnn --learning_rate 0.03 --num_global_iters 200  --algorithm FedAvg --times 1 --subusers 0.1
 #python CDKT_main.py --dataset Mnist --model cnn --learning_rate 0.03 --num_global_iters 200  --algorithm --times 1 --subusers 0.1
