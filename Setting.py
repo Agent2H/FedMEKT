@@ -22,7 +22,7 @@ DATASET = DATASETS[2]
 #Algorithm selection
 RUNNING_ALGS = ["mmFedAvg","mmFedProx","mmMOON","FedMEKT-S","FedMEKT-C"]
 
-RUNNING_ALG = RUNNING_ALGS[2]
+RUNNING_ALG = RUNNING_ALGS[4]
 
 #Model selection
 models=["split_LSTM"]

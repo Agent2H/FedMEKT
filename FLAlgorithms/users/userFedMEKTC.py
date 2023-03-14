@@ -9,7 +9,7 @@ from FLAlgorithms.users.userbase import User
 
 # Implementation for clients
 from utils.train_utils import KL_Loss, JSD, DCCLoss
-from utils.model_utils import read_data, read_user_data, read_public_data, make_seq_batch, get_seg_len,split_public,get_seg_len_public
+from utils.model_utils import make_seq_batch, get_seg_len,split_public,get_seg_len_public
 from Setting import *
 
 class userMultimodalRepFusion(User):

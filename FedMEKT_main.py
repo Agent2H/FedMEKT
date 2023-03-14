@@ -12,7 +12,7 @@ from FLAlgorithms.servers.serverMultimodalFedAvg import MultimodalFedAvg
 from FLAlgorithms.servers.serverMultimodalFedProx import MultimodalFedProx
 from FLAlgorithms.servers.serverFedMEKTS import MultimodalRep
 from FLAlgorithms.servers.serverFedMEKTC import MultimodalRepFusion
-from utils.model_utils import read_data, load_data, split_server_train
+from utils.model_utils import  load_data, split_server_train
 from FLAlgorithms.trainmodel.ae_model import *
 from utils.plot_utils import *
 import torch

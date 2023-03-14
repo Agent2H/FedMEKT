@@ -10,7 +10,7 @@ from FLAlgorithms.servers.serverbase import Server
 from Setting import rs_file_path, N_clients
 from utils.data_utils import write_file
 from utils.dem_plot import plot_from_file, plot_from_file2
-from utils.model_utils import read_data, read_user_data, read_public_data,make_seq_batch,get_seg_len,load_data,client_idxs
+from utils.model_utils import make_seq_batch,get_seg_len,load_data,client_idxs
 from torch.utils.data import DataLoader
 import numpy as np
 
